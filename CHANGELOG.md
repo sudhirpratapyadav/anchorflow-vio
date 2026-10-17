@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Fix preparation of full recordings whose IMU ends a fraction of one image
+  period before the last camera frame; retain exact historical sensor samples
+  and report the gap. Version 0.1.0's strict endpoint check rejected full Short19.
+- Add resumable full-test downloading, CRC/hash verification and atomic readiness.
+- Add a serial frozen inference queue with independent audits and automatic
+  complete-category/final submission packaging.
+
 ## 0.1.0 — 2026-10-17
 
 Initial mono-only source release of the measured F29 fixed-template baseline.

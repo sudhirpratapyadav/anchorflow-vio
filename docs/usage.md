@@ -40,6 +40,10 @@ identity matrix to bypass this check. Test-device compatibility is unverified.
 
 The preparer preserves the measured 4.2 ms IMU timestamp subtraction and noise
 settings. It creates image symlinks, so the source images must remain available.
+Camera/IMU streams may end at slightly different times. Endpoint gaps up to one
+observed image period are reported without changing sensor samples; larger gaps
+are rejected as potential truncation. For example, the full Short19 IMU ends
+4.804362 ms before its final image after timestamp correction.
 Its manifest fingerprints the sensor CSVs, calibrations and generated files;
 individual image bytes are not hashed. It does not load reference poses.
 
