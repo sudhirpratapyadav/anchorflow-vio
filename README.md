@@ -6,10 +6,14 @@ AnchorFlow uses one grayscale camera and an IMU. The current experimental config
 
 ## Status
 
-This repository is being prepared for the mono-only source release. Implementation, build instructions, dependency notices, and licensing are not yet included. The stereo research project is separate.
+This repository is being prepared for the mono-only source release. Implementation, build instructions, and dependency notices are not yet included. The stereo research project is separate.
 
 The experimental baseline has been evaluated on ten LaMAria training challenge recordings. Low-light start sensitivity and failure on a moving-platform recording remain known limitations. No main-test result is claimed.
 
 ## Acknowledgment
 
 The estimator is based on Basalt. AnchorFlow describes this project's fixed-template tracking configuration and mono evaluation work, not a claim to have invented the underlying estimator.
+
+## License
+
+Original AnchorFlow contributions are licensed under the [MIT License](LICENSE). Third-party code and dependencies retain their respective licenses and copyright notices.
