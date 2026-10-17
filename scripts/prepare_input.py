@@ -56,6 +56,18 @@ def inventory(sequence, factory_dir):
     return imu, aria, pinhole, factory
 
 
+def audit_imu_span(ns, timestamps):
+    # Sensor streams need not end on exactly the same sample. Preserve the
+    # historical data; reject gross truncation, but report sub-frame tail gaps.
+    period = int(np.median(np.diff(timestamps))) if len(timestamps) > 1 else 0
+    start_gap = max(0, int(ns[0]) - timestamps[0])
+    end_gap = max(0, timestamps[-1] - int(ns[-1]))
+    if start_gap > period or end_gap > period:
+        raise ValueError('IMU endpoint gap exceeds one observed image period')
+    return dict(image_period_ns=period, imu_start_gap_ns=start_gap, imu_end_gap_ns=end_gap,
+                note='No samples added or removed to repair endpoint gaps.')
+
+
 def prepare(sequence, out, policy_path, factory_dir, template, max_frames=0):
     policy = read_policy(policy_path)
     if max_frames < 0:
@@ -87,8 +99,7 @@ def prepare(sequence, out, policy_path, factory_dir, template, max_frames=0):
     if max_frames:
         keep = ns <= timestamps[-1] + 1000000000
         data, ns = data[keep], ns[keep]
-    if ns[0] > timestamps[0] or ns[-1] < timestamps[-1]:
-        raise ValueError('IMU does not cover the image interval')
+    endpoint_audit = audit_imu_span(ns, timestamps)
     cal = calibration(pinhole, template, policy)
     out.mkdir(parents=True, exist_ok=False)
     view = out/'dataset/mav0'
@@ -108,6 +119,7 @@ def prepare(sequence, out, policy_path, factory_dir, template, max_frames=0):
     write_json(out/'manifest.json', dict(sequence=sequence.name, images=len(rows), imu_rows=len(ns),
         max_frames=max_frames, source_intentionally_skipped_images=0, sensors=['cam0','imu0'],
         policy_sha256=digest(policy_path),
+        endpoint_audit=endpoint_audit,
         source_sha256={str(p.resolve()):digest(p) for p in sources},
         output_sha256={p:digest(out/p) for p in outputs}))
 

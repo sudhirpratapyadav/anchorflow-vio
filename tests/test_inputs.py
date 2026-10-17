@@ -6,11 +6,18 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'scripts'))
 from common import ROOT, read_policy
-from prepare_input import calibration, inventory
+from prepare_input import calibration, inventory, audit_imu_span
 from run_sequence import verify_files
 
 
 class InputTests(unittest.TestCase):
+    def test_subframe_imu_tail_preserved_but_truncation_rejected(self):
+        timestamps = [1000000000,1050000000,1100000000]
+        result = audit_imu_span([990000000,1095195638],timestamps)
+        self.assertEqual(result['imu_end_gap_ns'],4804362)
+        with self.assertRaisesRegex(ValueError,'exceeds one'):
+            audit_imu_span([990000000,1040000000],timestamps)
+
     def test_camera1_not_used_to_build_calibration(self):
         policy = read_policy(ROOT/'configs/mono.json')
         source = {'cam0': {'model':'PINHOLE','params':[200.,201.,100.,101.],
