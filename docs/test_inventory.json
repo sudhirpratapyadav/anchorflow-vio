@@ -1,0 +1,331 @@
+{
+  "source": "https://cvg-data.inf.ethz.ch/lamaria/asl_folder/test/",
+  "checked": "2026-10-17",
+  "count": 63,
+  "category_counts": {
+    "1": 18,
+    "2": 10,
+    "3": 16,
+    "4": 9,
+    "5": 10
+  },
+  "approx_compressed_GiB": 881.3,
+  "note": "Rounded directory-listing sizes, not exact bytes. Index only; no dataset downloaded.",
+  "records": [
+    {
+      "sequence": "sequence_1_1",
+      "archive": "sequence_1_1.zip",
+      "listed_size": "7.5G"
+    },
+    {
+      "sequence": "sequence_1_2",
+      "archive": "sequence_1_2.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_1_3",
+      "archive": "sequence_1_3.zip",
+      "listed_size": "9.0G"
+    },
+    {
+      "sequence": "sequence_1_4",
+      "archive": "sequence_1_4.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_1_5",
+      "archive": "sequence_1_5.zip",
+      "listed_size": "7.4G"
+    },
+    {
+      "sequence": "sequence_1_6",
+      "archive": "sequence_1_6.zip",
+      "listed_size": "10G"
+    },
+    {
+      "sequence": "sequence_1_7",
+      "archive": "sequence_1_7.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_1_8",
+      "archive": "sequence_1_8.zip",
+      "listed_size": "9.6G"
+    },
+    {
+      "sequence": "sequence_1_9",
+      "archive": "sequence_1_9.zip",
+      "listed_size": "9.2G"
+    },
+    {
+      "sequence": "sequence_1_10",
+      "archive": "sequence_1_10.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_1_11",
+      "archive": "sequence_1_11.zip",
+      "listed_size": "7.1G"
+    },
+    {
+      "sequence": "sequence_1_12",
+      "archive": "sequence_1_12.zip",
+      "listed_size": "10G"
+    },
+    {
+      "sequence": "sequence_1_13",
+      "archive": "sequence_1_13.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_1_14",
+      "archive": "sequence_1_14.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_1_15",
+      "archive": "sequence_1_15.zip",
+      "listed_size": "10G"
+    },
+    {
+      "sequence": "sequence_1_16",
+      "archive": "sequence_1_16.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_1_17",
+      "archive": "sequence_1_17.zip",
+      "listed_size": "9.8G"
+    },
+    {
+      "sequence": "sequence_1_18",
+      "archive": "sequence_1_18.zip",
+      "listed_size": "2.7G"
+    },
+    {
+      "sequence": "sequence_2_1",
+      "archive": "sequence_2_1.zip",
+      "listed_size": "14G"
+    },
+    {
+      "sequence": "sequence_2_2",
+      "archive": "sequence_2_2.zip",
+      "listed_size": "14G"
+    },
+    {
+      "sequence": "sequence_2_3",
+      "archive": "sequence_2_3.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_2_4",
+      "archive": "sequence_2_4.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_2_5",
+      "archive": "sequence_2_5.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_2_6",
+      "archive": "sequence_2_6.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_2_7",
+      "archive": "sequence_2_7.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_2_8",
+      "archive": "sequence_2_8.zip",
+      "listed_size": "8.1G"
+    },
+    {
+      "sequence": "sequence_2_9",
+      "archive": "sequence_2_9.zip",
+      "listed_size": "13G"
+    },
+    {
+      "sequence": "sequence_2_10",
+      "archive": "sequence_2_10.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_3_1",
+      "archive": "sequence_3_1.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_3_2",
+      "archive": "sequence_3_2.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_3_3",
+      "archive": "sequence_3_3.zip",
+      "listed_size": "17G"
+    },
+    {
+      "sequence": "sequence_3_4",
+      "archive": "sequence_3_4.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_3_5",
+      "archive": "sequence_3_5.zip",
+      "listed_size": "14G"
+    },
+    {
+      "sequence": "sequence_3_6",
+      "archive": "sequence_3_6.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_3_7",
+      "archive": "sequence_3_7.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_3_8",
+      "archive": "sequence_3_8.zip",
+      "listed_size": "22G"
+    },
+    {
+      "sequence": "sequence_3_9",
+      "archive": "sequence_3_9.zip",
+      "listed_size": "18G"
+    },
+    {
+      "sequence": "sequence_3_10",
+      "archive": "sequence_3_10.zip",
+      "listed_size": "27G"
+    },
+    {
+      "sequence": "sequence_3_11",
+      "archive": "sequence_3_11.zip",
+      "listed_size": "22G"
+    },
+    {
+      "sequence": "sequence_3_12",
+      "archive": "sequence_3_12.zip",
+      "listed_size": "19G"
+    },
+    {
+      "sequence": "sequence_3_13",
+      "archive": "sequence_3_13.zip",
+      "listed_size": "18G"
+    },
+    {
+      "sequence": "sequence_3_14",
+      "archive": "sequence_3_14.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_3_15",
+      "archive": "sequence_3_15.zip",
+      "listed_size": "21G"
+    },
+    {
+      "sequence": "sequence_3_16",
+      "archive": "sequence_3_16.zip",
+      "listed_size": "19G"
+    },
+    {
+      "sequence": "sequence_4_1",
+      "archive": "sequence_4_1.zip",
+      "listed_size": "22G"
+    },
+    {
+      "sequence": "sequence_4_2",
+      "archive": "sequence_4_2.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_4_3",
+      "archive": "sequence_4_3.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_4_4",
+      "archive": "sequence_4_4.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_4_5",
+      "archive": "sequence_4_5.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_4_6",
+      "archive": "sequence_4_6.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_4_7",
+      "archive": "sequence_4_7.zip",
+      "listed_size": "14G"
+    },
+    {
+      "sequence": "sequence_4_8",
+      "archive": "sequence_4_8.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_4_9",
+      "archive": "sequence_4_9.zip",
+      "listed_size": "9.9G"
+    },
+    {
+      "sequence": "sequence_5_1",
+      "archive": "sequence_5_1.zip",
+      "listed_size": "20G"
+    },
+    {
+      "sequence": "sequence_5_2",
+      "archive": "sequence_5_2.zip",
+      "listed_size": "17G"
+    },
+    {
+      "sequence": "sequence_5_3",
+      "archive": "sequence_5_3.zip",
+      "listed_size": "22G"
+    },
+    {
+      "sequence": "sequence_5_4",
+      "archive": "sequence_5_4.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_5_5",
+      "archive": "sequence_5_5.zip",
+      "listed_size": "16G"
+    },
+    {
+      "sequence": "sequence_5_6",
+      "archive": "sequence_5_6.zip",
+      "listed_size": "24G"
+    },
+    {
+      "sequence": "sequence_5_7",
+      "archive": "sequence_5_7.zip",
+      "listed_size": "11G"
+    },
+    {
+      "sequence": "sequence_5_8",
+      "archive": "sequence_5_8.zip",
+      "listed_size": "12G"
+    },
+    {
+      "sequence": "sequence_5_9",
+      "archive": "sequence_5_9.zip",
+      "listed_size": "15G"
+    },
+    {
+      "sequence": "sequence_5_10",
+      "archive": "sequence_5_10.zip",
+      "listed_size": "15G"
+    }
+  ]
+}

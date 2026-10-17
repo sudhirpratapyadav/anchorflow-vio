@@ -1,0 +1,15 @@
+# Changelog
+
+## 0.1.0 — 2026-10-17
+
+Initial mono-only source release of the measured F29 fixed-template baseline.
+
+- Pinned Basalt source and historical patch, one-camera reader, and source build script.
+- Portable cam0/imu0 preparation, frozen configuration, runtime auditing and pose export.
+- Official evaluation wrapper and deterministic, validated LaMAria packaging.
+- Ten-record training results and ten controlled-start measurements, including failures.
+- MIT original contributions with preserved upstream credits and dependency notices.
+
+Source-built 800-frame smoke poses and observations match the original runtime
+byte for byte. No full-cohort rerun with the new build or main-test score is
+claimed. Platform12 divergence and lowlight start sensitivity remain unresolved.

@@ -1,0 +1,62 @@
+{
+  "archive": "anchorflow-vio-training10.zip",
+  "archive_sha256": "e7a3e5384bfb39a4fbada5a2ad5fb7723df3511a992cc42bba6b210a5de0429d",
+  "manifest_sha256": "9416ea308417151c891dec79ade983b3447dfd8bb22a628f1cf5548dfe3092cb",
+  "dataset_scope": "training",
+  "format_ok": true,
+  "official_parser_checked": true,
+  "records": {
+    "sequence_1_19": {
+      "poses": 18352,
+      "member": "slam/sequence_1_19.txt",
+      "sha256": "39e5c0c40cf54aa4bd00f462b8365547237975a4039708df5c456d2847b0db6b"
+    },
+    "sequence_2_12": {
+      "poses": 33513,
+      "member": "slam/sequence_2_12.txt",
+      "sha256": "cc689776fd746c5aa469aa4fdb38b870ff4cd1d3ad93ba012ba4267790c8553a"
+    },
+    "sequence_3_17": {
+      "poses": 35842,
+      "member": "slam/sequence_3_17.txt",
+      "sha256": "d49d3e19bb9691ec38dcd9a403f71602774e50574838b76c0697c515f68fa548"
+    },
+    "sequence_4_10": {
+      "poses": 28410,
+      "member": "slam/sequence_4_10.txt",
+      "sha256": "dab7fa8d847f75cebac00e823143b93e70c8f20e6862db3131045a2ebc88b131"
+    },
+    "sequence_1_20": {
+      "poses": 20262,
+      "member": "slam/sequence_1_20.txt",
+      "sha256": "025e78def7f8d8c57a09f690b598729530d995c773e42986e9c20336b298294c"
+    },
+    "sequence_2_11": {
+      "poses": 23748,
+      "member": "slam/sequence_2_11.txt",
+      "sha256": "52b4ce39b3483057c73355bb6269e0a5c0d160cfba10d6853be32ccf51bf2b04"
+    },
+    "sequence_3_18": {
+      "poses": 33878,
+      "member": "slam/sequence_3_18.txt",
+      "sha256": "1b2fdd514e765e2a1d062d6a1c76db3f6076252ebfc9b4131e496ba046d8b174"
+    },
+    "sequence_4_11": {
+      "poses": 22541,
+      "member": "slam/sequence_4_11.txt",
+      "sha256": "93301d622b1e53b1aae6fc13dcebd6ce5ae66559ab337a92651d7a03ed8c072e"
+    },
+    "sequence_5_11": {
+      "poses": 22483,
+      "member": "slam/sequence_5_11.txt",
+      "sha256": "f9d00e8796b6c7382d99ff210cf4426adf3a600cc98b4e5e5f3584c03e5dcedc"
+    },
+    "sequence_5_12": {
+      "poses": 26665,
+      "member": "slam/sequence_5_12.txt",
+      "sha256": "bbe0f5db80f2bd5e5205e9ee0b2c0ae75ff64aa2a1ceaebe606345d860a77c4f"
+    }
+  },
+  "note": "Format checks do not certify accuracy or test-set completeness. No upload performed.",
+  "identical_trajectory_bytes_to_frozen_training_package": true
+}

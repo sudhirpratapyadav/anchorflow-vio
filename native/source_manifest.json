@@ -1,0 +1,25 @@
+{
+  "basalt_upstream": "https://gitlab.com/VladyslavUsenko/basalt.git",
+  "basalt_commit": "0f3b2b52c807f70ff4e2973ce253c73329eea7bc",
+  "vcpkg_upstream": "https://github.com/microsoft/vcpkg.git",
+  "vcpkg_commit": "1e199d32ad53aab1defda61ce41c380302e3f95c",
+  "research_source_commit": "db56ab14a7651220420b0e0d9c4d4bce47fac897",
+  "patch": "patches/basalt-f29.patch",
+  "patch_sha256": "e0a92c50df84ba47532075ec64cd0b3b0710c731d69139a63b392d0d2f313187",
+  "mono_reader_sha256": {
+    "native/reader.cpp": "395e56738caee288a267d87c4167535d5bba526fc5db381fcf2f047c913f267c",
+    "native/mono_euroc.h": "21fcb3a50f86452e6880ec17f8f802ae3610ea526dadb67fa0fdd281527221d0"
+  },
+  "reference_binary_sha256": {
+    "basalt_vio": "ef04feb46d8f3dee15c88f93e75c7619c860d257f3beaf74f31e49c526c416e5",
+    "libbasalt.so": "0ffaa05d246fd4b7abcffd9d39a937710925c924f00afd07ace9e2042d3cdba3",
+    "libmono_reader.so": "77ff4da0348343c85b50df951bb33384ad66c11593a06ace8774348451da598a"
+  },
+  "note": "Historical binary hashes are evidence, not a promise of compiler-independent bitwise builds. Only pinned upstream plus historical patch is estimator source; mutable research checkout is excluded.",
+  "reader_derivation": "Exact historical patched dataset_io_euroc.h, EurocVioDataset/EurocIO renamed to MonoEurocVioDataset/MonoEurocIO and num_cams2 changed to1; checked byte-for-byte against reconstructed upstream+patch.",
+  "calibration_template": {
+    "path": "native/calibration_template.json",
+    "upstream_path": "data/euroc_eucm_calib.json",
+    "sha256": "f1f9b0b63726df8d7b56bb315f21b8beaca5493a7e0de95d0f25a5b500d247cd"
+  }
+}

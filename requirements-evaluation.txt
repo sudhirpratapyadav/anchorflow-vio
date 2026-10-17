@@ -1,0 +1,8 @@
+--find-links https://cvg-data.inf.ethz.ch/lamaria/packages/pycolmap/
+numpy==2.2.6
+scipy==1.15.3
+evo==1.31.1
+pyceres==2.6
+pycolmap==3.13.0.dev0
+projectaria-tools==2.3.0
+tqdm==4.70.1

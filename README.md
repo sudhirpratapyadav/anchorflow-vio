@@ -1,14 +1,77 @@
 # AnchorFlow VIO
 
-Basalt-based monocular visual-inertial odometry with fixed-template optical-flow tracking and inertial fusion.
+[![License: MIT](https://img.shields.io/badge/Original_code-MIT-blue.svg)](LICENSE)
 
-AnchorFlow uses one grayscale camera and an IMU. The current experimental configuration is evaluated on LaMAria using the left camera (`cam0`) and right IMU (`imu0`), with a uniform configuration across recordings. No stereo measurements enter the estimator.
+Monocular visual-inertial odometry built on **Basalt**, using fixed-template
+optical-flow tracking and one camera plus IMU. This repository contains the
+mono-only source adaptation, frozen configuration, reproducible runner and
+LaMAria submission tools.
 
-## Status
+The configuration uses LaMAria's left grayscale camera (`cam0`) and right IMU
+(`imu0`). Every trajectory is initialized from those sensors alone. Stereo
+images, stereo-derived depth, reference trajectories and ground truth are not
+inference inputs. One configuration is used for every recording.
 
-This repository is being prepared for the mono-only source release. Implementation, build instructions, and dependency notices are not yet included. The stereo research project is separate.
+## Start here
 
-The experimental baseline has been evaluated on ten LaMAria training challenge recordings. Low-light start sensitivity and failure on a moving-platform recording remain known limitations. No main-test result is claimed.
+1. [Build the pinned native runtime](docs/build.md).
+2. [Prepare input and run a sequence](docs/usage.md).
+3. [Evaluate training results](docs/evaluation.md).
+4. [Create a LaMAria submission](docs/submission.md).
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+# First build the native runtime following docs/build.md.
+.venv/bin/python scripts/prepare_input.py /data/sequence_1_19 outputs/sequence_1_19/input
+.venv/bin/python scripts/run_sequence.py outputs/sequence_1_19/input outputs/sequence_1_19/run --runtime build/native/runtime
+```
+
+No dataset or prebuilt binary is bundled. Native source is reconstructed from a
+pinned upstream Basalt commit and the historical patch used in the experiments;
+build dependencies have their own licenses. The Python tools use paths relative
+to this repository and accept external data/runtime paths.
+
+## Measured training results
+
+These are **training results, not main-test leaderboard scores**. Each category
+contains two complete recordings, using the original uniform fixed-template
+configuration. Official LaMAria evaluators provide CP score and pose recall.
+
+| Category | Mean CP score | Pose recall at 5 m |
+|---|---:|---:|
+| Short | 74.05 | 100.00% |
+| Medium | 33.68 | 70.48% |
+| Long | 40.37 | 85.99% |
+| Lowlight | 30.16 | 76.18% |
+| Moving platform | 28.65 | Unavailable |
+
+Ten-record mean CP: **41.38302**. All 265,694 image timestamps have output poses,
+including 200 initialization fills and four later fills. Coverage is not accuracy:
+**Platform12 diverges and scores zero**. Lowlight accuracy changes substantially
+when initialization starts later in a recording. This is an experimental baseline,
+not a robust-localization certification or a deployment-ready robot stack.
+
+See [per-record results](benchmarks/training.csv),
+[controlled-start results](benchmarks/controlled_starts.csv) and
+[measurement notes](docs/results.md). Rejected feature-density, global-refinement,
+Earth-rate and restart variants are not selectively mixed into this release.
+
+Historical aggregate native processing rate is **84.64 frames/s** on an Intel
+Core i7-10700 with two estimator threads. This includes observation dumping and
+excludes preparation/evaluation. CPU affinity differed across historical runs;
+it is not a controlled deployment-latency measurement. Main-test performance is
+unmeasured.
+
+## Configuration and checks
+
+- [configs/mono.json](configs/mono.json): sensor, timing, IMU noise and runtime policy.
+- [configs/basalt.json](configs/basalt.json): frozen native estimator configuration.
+- [docs/release_validation.md](docs/release_validation.md): source-build and release checks.
+
+```sh
+.venv/bin/python -m unittest discover -s tests -v
+```
 
 ## Credits and upstream projects
 
@@ -23,7 +86,9 @@ AnchorFlow's work covers the mono input adaptation, fixed-template tracking conf
 - V. Usenko, N. Demmel, D. Schubert, J. Stückler, and D. Cremers. [Visual-Inertial Mapping with Non-Linear Factor Recovery](https://arxiv.org/abs/1904.06504). IEEE Robotics and Automation Letters, 2020.
 - N. Demmel, D. Schubert, C. Sommer, D. Cremers, and V. Usenko. [Square Root Marginalization for Sliding-Window Bundle Adjustment](https://arxiv.org/abs/2109.02182). ICCV, 2021.
 
-Please acknowledge the relevant upstream work when using or building on this project. Third-party license notices will accompany the corresponding code in the implementation release.
+This product includes software developed by the Autonomous Systems Lab and Skybotix AG.
+
+Please acknowledge the relevant upstream work when using or building on this project. Third-party notices are preserved under `native/licenses/` and `licenses/`; see [the native dependency notices](native/NOTICE.md).
 
 ## License
 

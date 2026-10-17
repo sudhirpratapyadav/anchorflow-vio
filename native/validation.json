@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-17",
+  "scope": "Fresh native source rebuild and matched 800-image Short19 smoke only; historical full-ten-record benchmark results were not rerun with this binary.",
+  "build": {
+    "target": "basalt_vio",
+    "targets_completed": 43,
+    "workers": 1,
+    "cpu_seconds": 328.111,
+    "memory_limit_bytes": 4294967296,
+    "dependency_mode": "existing read-only vcpkg dependency prefix; no fresh dependency rebuild",
+    "source_manifest_sha256": "3834066f0bc044ff6e77da4f5e26d6b86c3eeb73f4df7b8ff5c6f5be2b897df5",
+    "source_pins_sha256": "dade8fe939b17dcbd232e0c7dfd32042713b839ed099eb81c1aa3a26da5ce4ab",
+    "runtime_sha256": {
+      "basalt_vio": "7b2f0742cbae494f285358c270ba29ca30c76d5aa0c03342027617da4516f6df",
+      "libbasalt.so": "4ec903655a79d15e76ea74bcb42224c27cd09e4b38390485605901210ff4afbc",
+      "libmono_reader.so": "77ff4da0348343c85b50df951bb33384ad66c11593a06ace8774348451da598a"
+    },
+    "historical_binary_identity": {
+      "basalt_vio": false,
+      "libbasalt.so": false,
+      "libmono_reader.so": true
+    }
+  },
+  "smoke": {
+    "images": 800,
+    "duration_seconds_approx": 40,
+    "native_trajectory_rows": 780,
+    "native_trajectory_byte_identical": true,
+    "native_trajectory_max_abs_difference": 0.0,
+    "converted_estimate_byte_identical": true,
+    "observation_files": 800,
+    "all_observation_files_byte_identical": true,
+    "observations": 139977,
+    "camera_ids": [
+      0
+    ],
+    "output_poses": 800,
+    "initial_filled_poses": 20,
+    "later_filled_poses": 0,
+    "cpu_seconds": 16.51,
+    "wall_seconds": 9.49,
+    "peak_rss_kib": 99808,
+    "exit_code": 0,
+    "sha256": {
+      "trajectory.txt": "8a1a9f850c7df9243f22e63ce8dea49f5c54e59e3560076d0b63be3be56910ad",
+      "estimate.txt": "a11f9d1798a3ce445c8eaf9ff7f3e0627918dc249e5093c614b48d7fc4627bbf"
+    }
+  },
+  "limitations": [
+    "Offline cache-based build only; user-operated clean dependency acquisition and clean OS build not measured.",
+    "Compiler and CPU portability require validation; historical Release native CPU target retained.",
+    "Short smoke parity does not establish full-record scientific parity on all recordings."
+  ]
+}

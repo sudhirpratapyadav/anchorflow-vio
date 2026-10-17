@@ -1,0 +1,3 @@
+# Preserve upstream patch and legal notices byte-for-byte, including whitespace.
+patches/*.patch -text -whitespace
+native/licenses/** -text -whitespace

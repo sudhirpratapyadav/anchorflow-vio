@@ -1,0 +1,10 @@
+{
+  "name": "AnchorFlow VIO training baseline",
+  "scope": "One uniform image-zero policy; no record-specific selection",
+  "sha256": {
+    "configs/mono.json": "b55905d2c4cff099f42a04788ed1ae12ce47dcf5abe9a1c40fffc24bdac3cf6f",
+    "configs/basalt.json": "be48e1101f2852ebecc1ea319b34aed48abca542ee035602a9942a5f92593beb",
+    "configs/factory_imu/5f4f20ee.json": "ed82c6f0b434479d469ab1e1aede268688d9f780953e326c935e657502e69896",
+    "configs/factory_imu/cc5c2f57.json": "4c70a07b8c30771461ad7c27a36aee49898fb2013590b45b69a1267276d836af"
+  }
+}

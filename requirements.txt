@@ -1,0 +1,2 @@
+# Inference and submission validation; official scoring is optional (docs/evaluation.md).
+numpy==2.2.6

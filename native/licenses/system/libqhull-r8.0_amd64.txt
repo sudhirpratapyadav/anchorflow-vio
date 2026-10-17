@@ -1,0 +1,52 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Qhull
+Upstream-Contact: qhull@qhull.org
+Source: https://github.com/qhull/qhull
+
+Files: *
+Copyright: 1993-2020, C.B. Barber <brad@qhull.org>
+           1993-2020, The National Science and Technology Research Center for
+                      Computation and Visualization of Geometric Structures
+                      (The Geometry Center)
+                      University of Minnesota
+License: Qhull
+
+Files: debian/*
+Copyright: 2003-2009, Rafael Laboissiere <rafael@debian.org>
+           2003-2019, Barak A. Pearlmutter <bap@debian.org>
+           2020, Timo Röhling <timo@gaussglocke.de>
+License: GPL-3+
+
+License: Qhull
+ Qhull is free software and may be obtained via http from www.qhull.org. It
+ may be freely copied, modified, and redistributed under the following
+ conditions:
+ 1. All copyright notices must remain intact in all files.
+ 2. A copy of COPYING.txt must be distributed along with any copies
+    of Qhull that you redistribute; this includes copies that you have
+    modified, or copies of programs or other software products that
+    include Qhull.
+ 3. If you modify Qhull, you must include a notice giving the
+    name of the person performing the modification, the date of
+    modification, and the reason for such modification.
+ 4. When distributing modified versions of Qhull, or other software
+    products that include Qhull, you must provide notice that the original
+    source code may be obtained as noted above.
+ 5. There is no warranty or other guarantee of fitness for Qhull, it is
+    provided solely "as is".  Bug reports or fixes may be sent to
+    qhull_bug@qhull.org; the authors may or may not act on them as
+    they desire.
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ The complete text of the license can be found in the file
+ /usr/share/common-licenses/GPL-3

@@ -1,0 +1,27 @@
+{
+  "camera": "cam0",
+  "imu": "imu0",
+  "camera_choice": "prospectively fixed left grayscale; no per-sequence choice",
+  "factory_rectification": true,
+  "subtract_imu_timestamp_ns": 4200000,
+  "noise_scale": 20,
+  "gyro_noise_scale": 2,
+  "walk_scale": 1,
+  "gyro_walk_scale": 0.1,
+  "threads": 2,
+  "native_timeout_s": 14400,
+  "environment": {
+    "BASALT_OUTLIER_PX": "3",
+    "BASALT_OUTLIER_LM_RULE": "1",
+    "BASALT_DETERMINISTIC": "1",
+    "BASALT_MONO_CAMS": "1",
+    "BASALT_INIT_WINDOW_S": "1",
+    "BASALT_INIT_VEL": "2",
+    "BASALT_STEREO_INIT": "0",
+    "BASALT_ANCHOR": "0",
+    "BASALT_MAX_TRACK_AGE": "0",
+    "BASALT_FIXED_TEMPLATE": "1"
+  },
+  "native_config": "configs/basalt.json",
+  "name": "AnchorFlow VIO"
+}

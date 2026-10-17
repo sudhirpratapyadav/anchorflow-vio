@@ -1,0 +1,1860 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b827394..f6cc0e3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -79,7 +79,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+ set(CMAKE_CXX_FLAGS_CIDEBUG  "-O0 -DEIGEN_INITIALIZE_MATRICES_BY_NAN")
+ set(CMAKE_CXX_FLAGS_CIRELWITHDEBINFO "-O3 -DEIGEN_INITIALIZE_MATRICES_BY_NAN")
+ 
+-set(BASALT_CXX_FLAGS "-Wall -Wextra -Werror -Wno-error=unused-parameter -ftemplate-backtrace-limit=0")
++set(BASALT_CXX_FLAGS "-Wall -Wextra -Wno-error=unused-parameter -ftemplate-backtrace-limit=0")
+ 
+ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+   set(BASALT_CXX_FLAGS "${BASALT_CXX_FLAGS} -Wno-exceptions -fcolor-diagnostics -Wno-error=deprecated-declarations")
+diff --git a/include/basalt/io/dataset_io_euroc.h b/include/basalt/io/dataset_io_euroc.h
+index 862011c..564f2ec 100644
+--- a/include/basalt/io/dataset_io_euroc.h
++++ b/include/basalt/io/dataset_io_euroc.h
+@@ -39,6 +39,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <basalt/utils/filesystem.h>
+ 
+ #include <opencv2/imgcodecs.hpp>
++#include <opencv2/imgproc.hpp>
++#include <cstdlib>
+ 
+ namespace basalt {
+ 
+@@ -100,6 +102,18 @@ class EurocVioDataset : public VioDataset {
+       if (fs::exists(full_image_path)) {
+         cv::Mat img = cv::imread(full_image_path, cv::IMREAD_UNCHANGED);
+ 
++        // lamaria-slam: optional CLAHE on 8-bit input, BASALT_CLAHE=<clip limit> (8x8 tiles)
++        static const char* clahe_env = std::getenv("BASALT_CLAHE");
++        static bool clahe_announced = false;
++        if (!clahe_announced) {
++          clahe_announced = true;
++          std::cerr << "BASALT_CLAHE: " << ((clahe_env && *clahe_env) ? clahe_env : "off") << std::endl;
++        }
++        if (clahe_env && *clahe_env && img.type() == CV_8UC1) {
++          cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(std::atof(clahe_env), cv::Size(8, 8));
++          clahe->apply(img, img);
++        }
++
+         if (img.type() == CV_8UC1) {
+           res[i].img.reset(new ManagedImage<uint16_t>(img.cols, img.rows));
+ 
+diff --git a/include/basalt/linearization/landmark_block_abs_dynamic.hpp b/include/basalt/linearization/landmark_block_abs_dynamic.hpp
+index cc10c99..4b74d83 100644
+--- a/include/basalt/linearization/landmark_block_abs_dynamic.hpp
++++ b/include/basalt/linearization/landmark_block_abs_dynamic.hpp
+@@ -274,6 +274,18 @@ class LandmarkBlockAbsDynamic : public LandmarkBlock<Scalar> {
+ 
+     Vec3 inc = -Q1Jl.solve(Q1Jr + Q1Jp * pose_inc);
+ 
++    // A singular R_ll (degenerate landmark) gives a non-finite increment; upstream
++    // applied it anyway, which put NaNs into the landmark and from there into every
++    // later linearisation of the window (the estimator then diverged). Leave such a
++    // landmark where it is instead (inc = 0); the outlier filter removes it later.
++    if (!inc.array().isFinite().all()) {
++      static long nonfinite_inc = 0;
++      if (++nonfinite_inc <= 10 || nonfinite_inc % 100 == 0)
++        std::cerr << "Non-finite landmark increment skipped (" << nonfinite_inc
++                  << " so far)\n";
++      inc.setZero();
++    }
++
+     // We want to compute the model cost change. The model function is
+     //
+     //     L(inc) = F(x) + inc^T J^T r + 0.5 inc^T J^T J inc
+@@ -321,8 +333,7 @@ class LandmarkBlockAbsDynamic : public LandmarkBlock<Scalar> {
+ 
+     // TODO: detect and handle case like ceres, allowing a few iterations but
+     // stopping eventually
+-    if (!inc.array().isFinite().all() ||
+-        !lm_ptr->direction.array().isFinite().all() ||
++    if (!lm_ptr->direction.array().isFinite().all() ||
+         !std::isfinite(lm_ptr->inv_dist)) {
+       std::cerr << "Numerical failure in backsubstitution\n";
+     }
+diff --git a/include/basalt/optical_flow/frame_to_frame_optical_flow.h b/include/basalt/optical_flow/frame_to_frame_optical_flow.h
+index d16e708..9719c4a 100644
+--- a/include/basalt/optical_flow/frame_to_frame_optical_flow.h
++++ b/include/basalt/optical_flow/frame_to_frame_optical_flow.h
+@@ -35,6 +35,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ 
+ #pragma once
+ 
++#include <opencv2/imgcodecs.hpp>
++#include <opencv2/core.hpp>
++#include <cstdlib>
++#include <iostream>
++#include <fstream>
++#include <filesystem>
+ #include <thread>
+ 
+ #include <sophus/se2.hpp>
+@@ -108,7 +114,57 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+     }
+   }
+ 
++  // lamaria-slam (v3 F02): optional per-frame mask for cam0 (BASALT_MASK_DIR/<t_ns>.png, 255 =
++  // masked). New corners are not detected inside it and tracks entering it are dropped. A frame
++  // without a mask file keeps the previous mask.
++  cv::Mat mask0;
++  long mask_frames = 0, mask_missing = 0, mask_dropped = 0, mask_oversized = 0;
++  void loadMask(int64_t curr_t_ns) {
++    static const char* dir = std::getenv("BASALT_MASK_DIR");
++    static bool announced = false;
++    if (!announced) {
++      announced = true;
++      std::cerr << "BASALT_MASK_DIR: " << ((dir && *dir) ? dir : "off") << std::endl;
++    }
++    if (!(dir && *dir)) return;
++    cv::Mat m = cv::imread(std::string(dir) + "/" + std::to_string(curr_t_ns) + ".png", cv::IMREAD_GRAYSCALE);
++    // a mask covering more than BASALT_MASK_MAX_FRAC of the image is a detector failure (or the
++    // body filling the view): ignore it for this frame rather than starve the tracker
++    static const double max_frac = [] {
++      const char* e = std::getenv("BASALT_MASK_MAX_FRAC");
++      return (e && *e) ? std::atof(e) : 0.4;
++    }();
++    if (m.empty()) {
++      mask_missing++;
++    } else if (double(cv::countNonZero(m)) / double(m.total()) > max_frac) {
++      mask_oversized++;
++      mask0 = cv::Mat();
++    } else {
++      mask0 = m;
++    }
++    if (++mask_frames % 1000 == 0)
++      std::cerr << "mask: " << mask_frames << " frames, " << mask_missing << " without a mask file, "
++                << mask_oversized << " oversized masks ignored, " << mask_dropped << " tracked points dropped" << std::endl;
++  }
++  bool masked(const Eigen::Vector2f& p) const {
++    if (mask0.empty()) return false;
++    const int x = int(p.x() + 0.5f), y = int(p.y() + 0.5f);
++    return x >= 0 && y >= 0 && x < mask0.cols && y < mask0.rows && mask0.at<uint8_t>(y, x) > 0;
++  }
++  void dropMaskedTracks(OpticalFlowResult::Ptr& res) {
++    static const bool no_drop = std::getenv("BASALT_MASK_NO_DROP") != nullptr;  // debug: only block detection
++    if (no_drop || mask0.empty() || res->observations.empty()) return;
++    std::vector<KeypointId> drop;
++    for (const auto& kv : res->observations.at(0))
++      if (masked(kv.second.translation())) drop.push_back(kv.first);
++    for (KeypointId id : drop) {
++      for (auto& obs : res->observations) obs.erase(id);
++      mask_dropped++;
++    }
++  }
++
+   void processFrame(int64_t curr_t_ns, OpticalFlowInput::Ptr& new_img_vec) {
++    loadMask(curr_t_ns);
+     for (const auto& v : new_img_vec->img_data) {
+       if (!v.img.get()) return;
+     }
+@@ -161,16 +217,26 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+       for (size_t i = 0; i < calib.intrinsics.size(); i++) {
+         trackPoints(old_pyramid->at(i), pyramid->at(i),
+                     transforms->observations[i],
+-                    new_transforms->observations[i]);
++                    new_transforms->observations[i], nullptr, int(i));
++        anchorAlign(i, new_transforms->observations[i]);
++        dropOldTracks(new_transforms->observations[i], i);
+       }
+ 
++      revivePoints(new_transforms);
++
+       transforms = new_transforms;
+       transforms->input_images = new_img_vec;
+ 
++      dropMaskedTracks(transforms);
+       addPoints();
+       filterPoints();
+     }
+ 
++    anchorRecord();
++    applyExternalTracks(curr_t_ns);
++    dumpObservations(curr_t_ns);
++    writeTrackStats(curr_t_ns);
++
+     if (output_queue && frame_counter % config.optical_flow_skip_frames == 0) {
+       output_queue->push(transforms);
+     }
+@@ -178,12 +244,77 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+     frame_counter++;
+   }
+ 
++  // lamaria-slam (v4 G01): BASALT_OBS_DUMP=<dir> writes every frame's tracks to <dir>/<t_ns>.bin
++  // in the external-track record format below (int32 id, int32 cam, float x, float y), for the
++  // non-causal backend (tools/vi_ba). The same files can be fed back through BASALT_TRACKS_DIR.
++  void dumpObservations(int64_t t_ns) {
++    static const char* dir = std::getenv("BASALT_OBS_DUMP");
++    if (!(dir && *dir)) return;
++    static bool made = false;
++    if (!made) { made = true; std::filesystem::create_directories(dir); std::cerr << "BASALT_OBS_DUMP: " << dir << std::endl; }
++    std::ofstream f(std::string(dir) + "/" + std::to_string(t_ns) + ".bin", std::ios::binary);
++    struct Rec { int32_t id, cam; float x, y; };
++    for (size_t c = 0; c < transforms->observations.size(); c++)
++      for (const auto& kv : transforms->observations[c]) {
++        Rec r{int32_t(kv.first), int32_t(c), kv.second.translation().x(), kv.second.translation().y()};
++        f.write(reinterpret_cast<const char*>(&r), sizeof(r));
++      }
++  }
++
++  // lamaria-slam (v3 F11): external front end. BASALT_TRACKS_DIR/<t_ns>.bin holds records of
++  // (int32 track id, int32 cam, float x, float y) written by any tracker (scripts/make_xfeat_tracks.py).
++  // BASALT_TRACKS_MODE=replace (default): the records are the frame's observations and the KLT
++  // output is discarded; "augment": they are added next to the KLT tracks with ids offset by 2^30.
++  long ext_frames = 0, ext_missing = 0, ext_records = 0;
++  void applyExternalTracks(int64_t t_ns) {
++    static const char* dir = std::getenv("BASALT_TRACKS_DIR");
++    static const std::string mode = [] {
++      const char* e = std::getenv("BASALT_TRACKS_MODE");
++      return std::string((e && *e) ? e : "replace");
++    }();
++    static bool announced = false;
++    if (!announced) {
++      announced = true;
++      std::cerr << "BASALT_TRACKS_DIR: " << ((dir && *dir) ? dir : "off") << " mode " << mode << std::endl;
++    }
++    if (!(dir && *dir)) return;
++    std::ifstream f(std::string(dir) + "/" + std::to_string(t_ns) + ".bin", std::ios::binary);
++    ext_frames++;
++    if (!f) {
++      ext_missing++;
++      if (mode == "replace") for (auto& obs : transforms->observations) obs.clear();
++      return;
++    }
++    std::vector<char> bytes((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
++    struct Rec { int32_t id, cam; float x, y; };
++    const size_t n = bytes.size() / sizeof(Rec);
++    const Rec* r = reinterpret_cast<const Rec*>(bytes.data());
++    if (mode == "replace") for (auto& obs : transforms->observations) obs.clear();
++    const KeypointId offset = mode == "replace" ? 0 : (KeypointId(1) << 30);
++    for (size_t i = 0; i < n; i++) {
++      if (r[i].cam < 0 || size_t(r[i].cam) >= transforms->observations.size()) continue;
++      Eigen::AffineCompact2f t;
++      t.setIdentity();
++      t.translation() = Eigen::Vector2f(r[i].x, r[i].y);
++      transforms->observations[r[i].cam][offset + KeypointId(r[i].id)] = t;
++      ext_records++;
++    }
++    if (ext_frames % 1000 == 0)
++      std::cerr << "external tracks: " << ext_frames << " frames, " << ext_missing << " without a file, "
++                << ext_records << " records" << std::endl;
++  }
++
++  // lamaria-slam (v3 F14): optional per-point initial guess in the second image (init_map). Without
++  // it the search starts at the same pixel, which never converges across a wide stereo baseline
++  // (X06d: zero cam1 observations on the Aria pair, whose cameras are 75 degrees apart).
+   void trackPoints(const basalt::ManagedImagePyr<uint16_t>& pyr_1,
+                    const basalt::ManagedImagePyr<uint16_t>& pyr_2,
+                    const Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f>&
+                        transform_map_1,
+                    Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f>&
+-                       transform_map_2) const {
++                       transform_map_2,
++                   const Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f>* init_map = nullptr,
++                   int temporal_cam = -1) const {
+     size_t num_points = transform_map_1.size();
+ 
+     std::vector<KeypointId> ids;
+@@ -210,11 +341,21 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+ 
+         const Eigen::AffineCompact2f& transform_1 = init_vec[r];
+         Eigen::AffineCompact2f transform_2 = transform_1;
++        bool has_init = false;
++        if (init_map) {
++          auto it = init_map->find(id);
++          if (it != init_map->end()) { transform_2 = it->second; has_init = true; }
++        }
+ 
+-        bool valid = trackPoint(pyr_1, pyr_2, transform_1, transform_2);
++        // Only the forward temporal template changes. Stereo and the backward check stay identical.
++        bool valid = temporal_cam >= 0 && fixedTemplateOn()
++            ? trackFixedTemplate(size_t(temporal_cam), id, pyr_2, transform_2)
++            : trackPoint(pyr_1, pyr_2, transform_1, transform_2);
+ 
+         if (valid) {
+-          Eigen::AffineCompact2f transform_1_recovered = transform_2;
++          // the backward check starts where the point came from when a guess was used (the
++          // guess's own pixel is far from the original across a wide baseline)
++          Eigen::AffineCompact2f transform_1_recovered = has_init ? transform_1 : transform_2;
+ 
+           valid = trackPoint(pyr_2, pyr_1, transform_2, transform_1_recovered);
+ 
+@@ -223,8 +364,31 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+                             transform_1_recovered.translation())
+                                .squaredNorm();
+ 
+-            if (dist2 < config.optical_flow_max_recovered_dist2) {
+-              result[id] = transform_2;
++            // BASALT_STEREO_RECOVERED_DIST2: a looser forward-backward bound for the stereo pass
++            // (the patch appearance changes across a wide baseline); default = the config value
++            static const Scalar stereo_dist2 = [this] {
++              const char* e = std::getenv("BASALT_STEREO_RECOVERED_DIST2");
++              return Scalar((e && *e) ? std::atof(e) : config.optical_flow_max_recovered_dist2);
++            }();
++            if (dist2 < (has_init ? stereo_dist2 : Scalar(config.optical_flow_max_recovered_dist2))) {
++              // BASALT_STEREO_MAX_RES (F17): a stereo match is kept only if the photometric residual of
++              // the cam0 patch at the converged cam1 position (normalised intensities, RMS over the
++              // pattern) is below this; wrong matches across a wide baseline converge on the wrong
++              // texture and show it here
++              static const Scalar stereo_max_res = [] {
++                const char* e = std::getenv("BASALT_STEREO_MAX_RES");
++                return Scalar((e && *e) ? std::atof(e) : 1e9);
++              }();
++              bool keep = true;
++              if (has_init && stereo_max_res < Scalar(1e8)) {
++                PatchT p(pyr_1.lvl(0), transform_1.translation());
++                typename PatchT::VectorP res;
++                typename PatchT::Matrix2P pat = transform_2.linear().matrix() * PatchT::pattern2;
++                pat.colwise() += transform_2.translation();
++                if (!p.valid || !p.residual(pyr_2.lvl(0), pat, res)) keep = false;
++                else if (res.norm() / std::sqrt(Scalar(res.size())) > stereo_max_res) keep = false;
++              }
++              if (keep) result[id] = transform_2;
+             }
+           }
+         }
+@@ -308,6 +472,320 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+     return patch_valid;
+   }
+ 
++  // lamaria-slam (v3 F10): learned keypoints seeding the tracker. BASALT_KP_DIR/<t_ns>.bin holds
++  // float32 (x, y, score) triples for cam0 (scripts/make_learned_keypoints.py). The best external
++  // point per empty grid cell (score >= BASALT_KP_MIN_SCORE) becomes a new track; with
++  // BASALT_KP_MODE=union (default) FAST then fills the cells still empty, with "replace" it does not.
++  long kp_frames = 0, kp_missing = 0, kp_added = 0, kp_fast_added = 0;
++  void externalPoints(int64_t t_ns, const Eigen::aligned_vector<Eigen::Vector2d>& pts0,
++                      Eigen::aligned_vector<Eigen::Vector2d>& out) {
++    static const char* dir = std::getenv("BASALT_KP_DIR");
++    static const float min_score = [] {
++      const char* e = std::getenv("BASALT_KP_MIN_SCORE");
++      return (e && *e) ? float(std::atof(e)) : 0.0f;
++    }();
++    static bool announced = false;
++    if (!announced) {
++      announced = true;
++      std::cerr << "BASALT_KP_DIR: " << ((dir && *dir) ? dir : "off") << " min score " << min_score << std::endl;
++    }
++    if (!(dir && *dir)) return;
++    std::ifstream f(std::string(dir) + "/" + std::to_string(t_ns) + ".bin", std::ios::binary);
++    kp_frames++;
++    if (!f) { kp_missing++; return; }
++    std::vector<char> bytes((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
++    const size_t n = bytes.size() / (3 * sizeof(float));
++    const float* v = reinterpret_cast<const float*>(bytes.data());
++    const int P = config.optical_flow_detection_grid_size;
++    const auto& img = pyramid->at(0).lvl(0);
++    const int x_start = (img.w % P) / 2, y_start = (img.h % P) / 2;
++    const int nx = img.w / P, ny = img.h / P;
++    // occupancy as in detectKeypoints: a cell with a tracked point gets nothing new
++    std::vector<int> best(size_t(nx) * ny, -1);
++    std::vector<char> occupied(size_t(nx) * ny, 0);
++    auto cell = [&](double x, double y) {
++      const int cx = int((x - x_start) / P), cy = int((y - y_start) / P);
++      if (x < x_start || y < y_start || cx >= nx || cy >= ny) return -1;
++      return cy * nx + cx;
++    };
++    for (const auto& p : pts0) { const int c = cell(p[0], p[1]); if (c >= 0) occupied[c] = 1; }
++    for (size_t i = 0; i < n; i++) {
++      const float x = v[3 * i], y = v[3 * i + 1], sc = v[3 * i + 2];
++      if (sc < min_score || !img.InBounds(x, y, 19)) continue;  // same edge margin as FAST (EDGE_THRESHOLD)
++      const int c = cell(x, y);
++      if (c < 0 || occupied[c]) continue;
++      if (best[c] < 0 || v[3 * best[c] + 2] < sc) best[c] = int(i);
++    }
++    for (int b : best)
++      if (b >= 0) out.emplace_back(v[3 * b], v[3 * b + 1]);
++    kp_added += out.size();
++    if (kp_frames % 1000 == 0)
++      std::cerr << "learned kp: " << kp_frames << " frames, " << kp_missing << " without a file, "
++                << kp_added << " external points added, " << kp_fast_added << " FAST points added" << std::endl;
++  }
++
++  // lamaria-slam (v4 F26): optional anchored re-alignment (the drift mechanism remains unproven).
++  // With BASALT_ANCHOR=1 each track keeps
++  // the patches (all pyramid levels) of the frame it was created in; after the frame-to-frame step the
++  // point is re-aligned to its anchor patches from the tracked position (levels BASALT_ANCHOR_TOP_LEVEL..0),
++  // and the re-aligned position replaces the tracked one when the alignment converges, moves the point by
++  // less than BASALT_ANCHOR_MAX_SHIFT px and leaves a level-0 photometric residual below
++  // BASALT_ANCHOR_MAX_RES (normalised intensities, RMS over the pattern); otherwise the frame-to-frame
++  // position stands (appearance has changed too much for the old patch, typically under scale change).
++  struct Anchor {
++    std::vector<PatchT> patches;
++    Matrix2 birth_linear;
++    long frame;
++  };
++  std::vector<std::map<KeypointId, Anchor, std::less<KeypointId>, Eigen::aligned_allocator<std::pair<const KeypointId, Anchor>>>> anchors;
++  long anchor_tried = 0, anchor_applied = 0, anchor_rej_conv = 0, anchor_rej_shift = 0, anchor_rej_res = 0, anchor_frames = 0;
++  double anchor_shift_sum = 0;
++  static bool anchorOn() {
++    static const bool on = [] { const char* e = std::getenv("BASALT_ANCHOR"); const bool v = e && *e && *e != '0';
++      if (v) std::cerr << "BASALT_ANCHOR: on" << std::endl; return v; }();
++    return on;
++  }
++  void anchorAlign(size_t cam, Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f>& obs) {
++    if (!anchorOn()) return;
++    static const Scalar max_res = [] { const char* e = std::getenv("BASALT_ANCHOR_MAX_RES"); return Scalar((e && *e) ? std::atof(e) : 0.3); }();
++    static const Scalar max_shift = [] { const char* e = std::getenv("BASALT_ANCHOR_MAX_SHIFT"); return Scalar((e && *e) ? std::atof(e) : 2.0); }();
++    static const int top_level = [] { const char* e = std::getenv("BASALT_ANCHOR_TOP_LEVEL"); return (e && *e) ? std::atoi(e) : 1; }();
++    if (anchors.size() <= cam) anchors.resize(cam + 1);
++    auto& amap = anchors[cam];
++    const auto& pyr = pyramid->at(cam);
++    std::vector<KeypointId> ids; ids.reserve(obs.size());
++    for (const auto& kv : obs) if (amap.count(kv.first)) ids.push_back(kv.first);
++    std::vector<int> outcome(ids.size(), 0);  // 0 applied, 1 no convergence, 2 shift, 3 residual
++    Eigen::aligned_vector<Eigen::AffineCompact2f> refined(ids.size());
++    std::vector<double> shifts(ids.size(), 0.0);
++    tbb::parallel_for(tbb::blocked_range<size_t>(0, ids.size()), [&](const tbb::blocked_range<size_t>& range) {
++      for (size_t r = range.begin(); r != range.end(); ++r) {
++        const Anchor& a = amap.at(ids[r]);
++        const Eigen::AffineCompact2f& t = obs.at(ids[r]);
++        Eigen::AffineCompact2f tr = t;
++        bool valid = true;
++        for (int level = std::min(top_level, config.optical_flow_levels); level >= 0 && valid; level--) {
++          const Scalar scale = 1 << level;
++          tr.translation() /= scale;
++          valid &= a.patches[level].valid && trackPointAtLevel(pyr.lvl(level), a.patches[level], tr);
++          tr.translation() *= scale;
++        }
++        if (!valid) { outcome[r] = 1; continue; }
++        const Scalar shift = (tr.translation() - t.translation()).norm();
++        if (shift > max_shift) { outcome[r] = 2; continue; }
++        typename PatchT::VectorP res;
++        typename PatchT::Matrix2P pat = tr.linear().matrix() * PatchT::pattern2;
++        pat.colwise() += tr.translation();
++        if (!a.patches[0].residual(pyr.lvl(0), pat, res) || res.norm() / std::sqrt(Scalar(res.size())) > max_res) { outcome[r] = 3; continue; }
++        refined[r] = tr; shifts[r] = shift;
++      }
++    });
++    // BASALT_ANCHOR_DROP=1 (F26b): a track whose first-frame patch no longer fits is dropped instead of kept at
++    // its frame-to-frame position (the patch tracker's behaviour: only tracks consistent with their template live)
++    static const bool drop = [] { const char* e = std::getenv("BASALT_ANCHOR_DROP"); return e && *e && *e != '0'; }();
++    for (size_t r = 0; r < ids.size(); r++) {
++      anchor_tried++;
++      switch (outcome[r]) {
++        case 0: obs[ids[r]] = refined[r]; anchor_applied++; anchor_shift_sum += shifts[r]; break;
++        case 1: anchor_rej_conv++; if (drop) obs.erase(ids[r]); break;
++        case 2: anchor_rej_shift++; if (drop) obs.erase(ids[r]); break;
++        default: anchor_rej_res++; if (drop) obs.erase(ids[r]); break;
++      }
++    }
++    if (cam == 0 && ++anchor_frames % 1000 == 0)
++      std::cerr << "anchor: " << anchor_frames << " frames, tried " << anchor_tried << ", applied " << anchor_applied
++                << " (mean shift " << (anchor_applied ? anchor_shift_sum / anchor_applied : 0.0) << " px), no convergence "
++                << anchor_rej_conv << ", shift " << anchor_rej_shift << ", residual " << anchor_rej_res << std::endl;
++  }
++  static bool fixedTemplateOn() {
++    static const bool on = [] {
++      const char* e = std::getenv("BASALT_FIXED_TEMPLATE");
++      const bool v = e && *e && *e != '0';
++      std::cerr << "BASALT_FIXED_TEMPLATE: " << v << std::endl;
++      return v;
++    }();
++    return on;
++  }
++  bool trackFixedTemplate(size_t cam, KeypointId id,
++                          const basalt::ManagedImagePyr<uint16_t>& pyr,
++                          Eigen::AffineCompact2f& transform) const {
++    if (cam >= anchors.size()) return false;
++    const auto it = anchors[cam].find(id);
++    if (it == anchors[cam].end()) return false;
++    const Anchor& a = it->second;
++    transform.linear() = a.birth_linear.inverse() * transform.linear();
++    bool valid = true;
++    for (int level = config.optical_flow_levels; level >= 0 && valid; level--) {
++      const Scalar scale = 1 << level;
++      transform.translation() /= scale;
++      valid = a.patches[level].valid && trackPointAtLevel(pyr.lvl(level), a.patches[level], transform);
++      transform.translation() *= scale;
++    }
++    transform.linear() = a.birth_linear * transform.linear();
++    return valid;
++  }
++
++  std::ofstream track_stats;
++  std::vector<std::map<KeypointId, size_t>> stats_birth;
++  void writeTrackStats(int64_t stamp) {
++    const char* path = std::getenv("BASALT_TRACK_STATS");
++    if (!(path && *path)) return;
++    if (!track_stats.is_open()) {
++      track_stats.open(path);
++      track_stats << "t_ns,frame,cam,observations,new_tracks,shared_cam0,age_sum_frames\n";
++      stats_birth.resize(transforms->observations.size());
++    }
++    for (size_t cam = 0; cam < transforms->observations.size(); cam++) {
++      const auto& obs = transforms->observations[cam];
++      auto& births = stats_birth[cam];
++      for (auto it = births.begin(); it != births.end();) {
++        if (!obs.count(it->first)) it = births.erase(it); else ++it;
++      }
++      size_t added = 0, shared = 0, ages = 0;
++      for (const auto& kv : obs) {
++        const auto inserted = births.emplace(kv.first, frame_counter);
++        added += inserted.second;
++        ages += frame_counter - inserted.first->second;
++        if (cam > 0 && transforms->observations[0].count(kv.first)) shared++;
++      }
++      track_stats << stamp << ',' << frame_counter << ',' << cam << ',' << obs.size() << ','
++                  << added << ',' << shared << ',' << ages << '\n';
++    }
++    if (frame_counter % 1000 == 0) track_stats.flush();
++  }
++
++  // BASALT_MAX_TRACK_AGE=N (F26c): a track older than N frames is dropped (and re-detected as a new point by
++  // addPoints in a later frame); tests whether the drift lives in the long tracks, without any anchor
++  std::vector<std::map<KeypointId, long>> track_birth;
++  long age_dropped = 0;
++  void dropOldTracks(Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f>& obs, size_t cam) {
++    static const long max_age = [] { const char* e = std::getenv("BASALT_MAX_TRACK_AGE"); const long v = (e && *e) ? std::atol(e) : 0;
++      if (v > 0) std::cerr << "BASALT_MAX_TRACK_AGE: " << v << std::endl; return v; }();
++    if (max_age <= 0) return;
++    if (track_birth.size() <= cam) track_birth.resize(cam + 1);
++    auto& b = track_birth[cam];
++    for (auto it = obs.begin(); it != obs.end();) {
++      auto bi = b.find(it->first);
++      if (bi != b.end() && frame_counter - bi->second > max_age) { it = obs.erase(it); age_dropped++; }
++      else ++it;
++    }
++  }
++  void recordBirths() {
++    static const long max_age = [] { const char* e = std::getenv("BASALT_MAX_TRACK_AGE"); return (e && *e) ? std::atol(e) : 0; }();
++    if (max_age <= 0) return;
++    if (track_birth.size() < transforms->observations.size()) track_birth.resize(transforms->observations.size());
++    for (size_t cam = 0; cam < transforms->observations.size(); cam++) {
++      auto& b = track_birth[cam]; const auto& obs = transforms->observations[cam];
++      for (auto it = b.begin(); it != b.end();) { if (!obs.count(it->first)) it = b.erase(it); else ++it; }
++      for (const auto& kv : obs) if (!b.count(kv.first)) b[kv.first] = frame_counter;
++    }
++  }
++  // after the frame's points are final: anchor the new tracks at their first position, forget the dead ones
++  void anchorRecord() {
++    recordBirths();
++    if (!anchorOn() && !fixedTemplateOn()) return;
++    if (anchors.size() < transforms->observations.size()) anchors.resize(transforms->observations.size());
++    for (size_t cam = 0; cam < transforms->observations.size(); cam++) {
++      auto& amap = anchors[cam];
++      const auto& obs = transforms->observations[cam];
++      for (auto it = amap.begin(); it != amap.end();) { if (!obs.count(it->first)) it = amap.erase(it); else ++it; }
++      for (const auto& kv : obs) {
++        if (amap.count(kv.first)) continue;
++        Anchor a; a.frame = frame_counter; a.birth_linear = kv.second.linear(); bool ok = true;
++        for (int level = 0; level <= config.optical_flow_levels; level++) {
++          a.patches.emplace_back(pyramid->at(cam).lvl(level), kv.second.translation() / Scalar(1 << level));
++          ok &= a.patches.back().valid;
++        }
++        if (ok) amap[kv.first] = std::move(a);
++      }
++    }
++  }
++
++  // lamaria-slam (v3 appendix F20): patch-based re-association inside the tracker. When KLT loses a cam0
++  // track, its patches (all pyramid levels, from the frame it was last seen in) and position are kept for
++  // BASALT_REVIVE_FRAMES frames; on each new frame the stored patches are tracked into the new image from
++  // the last position, and if the photometric residual at level 0 is below BASALT_REVIVE_MAX_RES the track
++  // comes back under its old id, so the back end keeps the landmark (with BASALT_LOST_GRACE on its side).
++  struct LostTrack {
++    Eigen::AffineCompact2f t;
++    long frame;
++    std::vector<PatchT> patches;
++  };
++  std::map<KeypointId, LostTrack, std::less<KeypointId>, Eigen::aligned_allocator<std::pair<const KeypointId, LostTrack>>> lost_tracks;
++  // BASALT_REVIVE_STRICT=1 (F20b): a revived track is held back one frame and emitted only if the normal
++  // forward-backward KLT step from the revived position succeeds in the next frame
++  Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f> provisional;
++  long revive_lost = 0, revive_ok = 0, revive_frames_seen = 0, revive_confirmed = 0, revive_rejected = 0;
++  void revivePoints(OpticalFlowResult::Ptr& new_transforms) {
++    static const int revive_frames = [] {
++      const char* e = std::getenv("BASALT_REVIVE_FRAMES");
++      const int v = (e && *e) ? std::atoi(e) : 0;
++      std::cerr << "BASALT_REVIVE_FRAMES: " << v << std::endl;
++      return v;
++    }();
++    static const Scalar max_res = [] {
++      const char* e = std::getenv("BASALT_REVIVE_MAX_RES");
++      return Scalar((e && *e) ? std::atof(e) : 0.2);
++    }();
++    static const bool strict = [] { const char* e = std::getenv("BASALT_REVIVE_STRICT"); return e && *e && *e != '0'; }();
++    if (revive_frames <= 0 || !old_pyramid) return;
++    auto& obs_new = new_transforms->observations.at(0);
++    // 0. provisional revivals from the previous frame: confirm with the strict KLT step old -> new
++    if (strict && !provisional.empty()) {
++      Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f> confirmed;
++      trackPoints(old_pyramid->at(0), pyramid->at(0), provisional, confirmed);
++      for (const auto& kv : confirmed) {
++        if (!obs_new.count(kv.first)) { obs_new[kv.first] = kv.second; revive_confirmed++; }
++      }
++      revive_rejected += provisional.size() - confirmed.size();
++      provisional.clear();
++    }
++    // 1. try to revive tracks lost in earlier frames
++    for (auto it = lost_tracks.begin(); it != lost_tracks.end();) {
++      const long age = frame_counter - it->second.frame;
++      if (age > revive_frames || obs_new.count(it->first)) { it = lost_tracks.erase(it); continue; }
++      Eigen::AffineCompact2f tr = it->second.t;
++      bool valid = true;
++      for (int level = config.optical_flow_levels; level >= 0 && valid; level--) {
++        const Scalar scale = 1 << level;
++        tr.translation() /= scale;
++        valid &= it->second.patches[level].valid && trackPointAtLevel(pyramid->at(0).lvl(level), it->second.patches[level], tr);
++        tr.translation() *= scale;
++      }
++      if (valid) {
++        typename PatchT::VectorP res;
++        typename PatchT::Matrix2P pat = tr.linear().matrix() * PatchT::pattern2;
++        pat.colwise() += tr.translation();
++        valid = it->second.patches[0].residual(pyramid->at(0).lvl(0), pat, res) &&
++                res.norm() / std::sqrt(Scalar(res.size())) < max_res &&
++                pyramid->at(0).lvl(0).InBounds(tr.translation()[0], tr.translation()[1], 19);
++      }
++      if (valid) {
++        if (strict) provisional[it->first] = tr; else obs_new[it->first] = tr;
++        revive_ok++;
++        it = lost_tracks.erase(it);
++      } else {
++        ++it;
++      }
++    }
++    // 2. record the tracks lost in this frame (patches from the previous image, where they were last seen)
++    for (const auto& kv : transforms->observations.at(0)) {
++      if (obs_new.count(kv.first) || lost_tracks.count(kv.first)) continue;
++      LostTrack lt;
++      lt.t = kv.second;
++      lt.frame = frame_counter;
++      bool ok = true;
++      for (int level = 0; level <= config.optical_flow_levels; level++) {
++        lt.patches.emplace_back(old_pyramid->at(0).lvl(level), kv.second.translation() / Scalar(1 << level));
++        ok &= lt.patches.back().valid;
++      }
++      if (ok) { lost_tracks[kv.first] = lt; revive_lost++; }
++    }
++    if (++revive_frames_seen % 1000 == 0)
++      std::cerr << "revive: " << revive_frames_seen << " frames, " << revive_lost << " tracks lost, " << revive_ok << " revived, "
++                << revive_confirmed << " confirmed, " << revive_rejected << " rejected, " << lost_tracks.size() << " pending" << std::endl;
++  }
++
+   void addPoints() {
+     Eigen::aligned_vector<Eigen::Vector2d> pts0;
+ 
+@@ -317,13 +795,38 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+ 
+     KeypointsData kd;
+ 
+-    detectKeypoints(pyramid->at(0).lvl(0), kd,
+-                    config.optical_flow_detection_grid_size, 1, pts0);
++    static const std::string kp_mode = [] {
++      const char* e = std::getenv("BASALT_KP_MODE");
++      return std::string((e && *e) ? e : "union");
++    }();
++    // modes: union (external first, FAST fills the rest), replace (external only),
++    // fill (FAST first as upstream, external points only where FAST found nothing)
++    static const bool have_ext = std::getenv("BASALT_KP_DIR") && *std::getenv("BASALT_KP_DIR");
++    Eigen::aligned_vector<Eigen::Vector2d> ext;
++    if (kp_mode == "fill" || !have_ext) {
++      detectKeypoints(pyramid->at(0).lvl(0), kd, config.optical_flow_detection_grid_size, 1, pts0);
++      kp_fast_added += kd.corners.size();
++      for (const auto& p : kd.corners) pts0.emplace_back(p);
++      if (have_ext) {
++        externalPoints(transforms->t_ns, pts0, ext);
++        kd.corners.insert(kd.corners.end(), ext.begin(), ext.end());
++      }
++    } else {
++      externalPoints(transforms->t_ns, pts0, ext);
++      for (const auto& p : ext) { kd.corners.emplace_back(p); pts0.emplace_back(p); }
++      if (kp_mode != "replace") {
++        KeypointsData kd_fast;
++        detectKeypoints(pyramid->at(0).lvl(0), kd_fast, config.optical_flow_detection_grid_size, 1, pts0);
++        kd.corners.insert(kd.corners.end(), kd_fast.corners.begin(), kd_fast.corners.end());
++        kp_fast_added += kd_fast.corners.size();
++      }
++    }
+ 
+     Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f> new_poses0,
+         new_poses1;
+ 
+     for (size_t i = 0; i < kd.corners.size(); i++) {
++      if (masked(kd.corners[i].cast<float>())) continue;
+       Eigen::AffineCompact2f transform;
+       transform.setIdentity();
+       transform.translation() = kd.corners[i].cast<Scalar>();
+@@ -335,13 +838,75 @@ class FrameToFrameOpticalFlow : public OpticalFlowBase {
+     }
+ 
+     if (calib.intrinsics.size() > 1) {
+-      trackPoints(pyramid->at(0), pyramid->at(1), new_poses0, new_poses1);
++      // BASALT_STEREO_INIT=1: start the cam1 search at the projection of the cam0 bearing rotated
++      // into cam1 (a point at infinity); the pyramid then absorbs the parallax
++      static const bool stereo_init = [] {
++        const char* e = std::getenv("BASALT_STEREO_INIT");
++        const bool v = e && *e && *e != '0';
++        std::cerr << "BASALT_STEREO_INIT: " << v << std::endl;
++        return v;
++      }();
++      Eigen::aligned_map<KeypointId, Eigen::AffineCompact2f> init1;
++      if (stereo_init) {
++        const Eigen::Matrix<Scalar, 4, 4> T_c1_c0 = (calib.T_i_c[1].inverse() * calib.T_i_c[0]).matrix();
++        const auto& img1 = pyramid->at(1).lvl(0);
++        for (const auto& kv : new_poses0) {
++          Eigen::Matrix<Scalar, 4, 1> d0;
++          if (!calib.intrinsics[0].unproject(kv.second.translation(), d0)) continue;
++          d0[3] = 0;  // at infinity: rotation only
++          Eigen::Matrix<Scalar, 4, 1> d1 = T_c1_c0 * d0;
++          Eigen::Matrix<Scalar, 2, 1> p1;
++          if (!calib.intrinsics[1].project(d1, p1)) continue;
++          if (!img1.InBounds(p1[0], p1[1], 19)) continue;
++          Eigen::AffineCompact2f t = kv.second;
++          t.translation() = p1;
++          init1[kv.first] = t;
++        }
++        stereo_init_pred += init1.size();
++      }
++      trackPoints(pyramid->at(0), pyramid->at(1), new_poses0, new_poses1, stereo_init ? &init1 : nullptr);
++      stereo_new += new_poses1.size();
++      stereo_new0 += new_poses0.size();
++      if (stereo_init && ++stereo_frames % 1000 == 0)
++        std::cerr << "stereo init: " << stereo_frames << " frames, " << stereo_new0 << " new cam0 points, "
++                  << stereo_init_pred << " predicted in cam1, " << stereo_new << " stereo-matched" << std::endl;
+ 
+       for (const auto& kv : new_poses1) {
+         transforms->observations.at(1).emplace(kv);
+       }
+     }
++
++    // lamaria-slam (v4 F02): BASALT_MONO_CAMS=1 detects new points in every camera, not only cam0, with
++    // the same grid occupancy rule; they get fresh ids, are tracked frame to frame in their own camera
++    // (processFrame tracks all cameras) and become landmarks hosted in that camera (sqrt_keypoint_vio).
++    // On a pair with little overlap (Aria: 75 degrees apart) cam1 otherwise contributes nothing, and a
++    // monocular front end on one sideways-looking camera has a one-signed yaw bias (v4 X02 d).
++    static const bool mono_cams = [] {
++      const char* e = std::getenv("BASALT_MONO_CAMS");
++      const bool v = e && *e && *e != '0';
++      std::cerr << "BASALT_MONO_CAMS: " << v << std::endl;
++      return v;
++    }();
++    if (mono_cams) {
++      for (size_t c = 1; c < calib.intrinsics.size(); c++) {
++        Eigen::aligned_vector<Eigen::Vector2d> ptsc;
++        for (const auto& kv : transforms->observations.at(c)) ptsc.emplace_back(kv.second.translation().cast<double>());
++        KeypointsData kdc;
++        detectKeypoints(pyramid->at(c).lvl(0), kdc, config.optical_flow_detection_grid_size, 1, ptsc);
++        for (const auto& corner : kdc.corners) {
++          Eigen::AffineCompact2f transform;
++          transform.setIdentity();
++          transform.translation() = corner.cast<Scalar>();
++          transforms->observations.at(c)[last_keypoint_id++] = transform;
++          mono_cam_added++;
++        }
++      }
++      if (++mono_cam_frames % 2000 == 0)
++        std::cerr << "mono cams: " << mono_cam_frames << " frames, " << mono_cam_added << " points added in cameras other than cam0" << std::endl;
++    }
+   }
++  long stereo_frames = 0, stereo_new0 = 0, stereo_init_pred = 0, stereo_new = 0;
++  long mono_cam_added = 0, mono_cam_frames = 0;
+ 
+   void filterPoints() {
+     if (calib.intrinsics.size() < 2) return;
+diff --git a/include/basalt/vi_estimator/ba_base.h b/include/basalt/vi_estimator/ba_base.h
+index 61707a7..17cbfb2 100644
+--- a/include/basalt/vi_estimator/ba_base.h
++++ b/include/basalt/vi_estimator/ba_base.h
+@@ -60,6 +60,16 @@ class BundleAdjustmentBase {
+                     Scalar outlier_threshold = 0) const;
+ 
+   void filterOutliers(Scalar outlier_threshold, int min_num_obs);
++  long filter_removed_landmarks = 0, filter_removed_obs = 0, filter_skipped_frames = 0;  // counters (lamaria-slam)
++  // lamaria-slam (v3 F08d): one residual pass; skips the frame when more than max_frac of the
++  // observations exceed the threshold (a burst means the pose is wrong, not the points), and with
++  // lm_rule removes an observation only if its landmark's median residual is below thr / 2
++  // (the landmark is good and this observation is the odd one). Host observations are never a
++  // reason to delete a landmark here. Returns false when the frame was skipped.
++  bool filterOutliersV2(Scalar outlier_threshold, int min_num_obs, Scalar max_frac, bool lm_rule);
++  // lamaria-slam (v3 F08b): threshold relative to the current residual spread,
++  // max(floor_px, median + k * 1.4826 * MAD); returns the threshold used
++  Scalar filterOutliersAdaptive(Scalar floor_px, Scalar k, int min_num_obs, size_t* removed_obs = nullptr);
+ 
+   void optimize_single_frame_pose(
+       PoseStateWithLin<Scalar>& state_t,
+diff --git a/src/linearization/linearization_abs_qr.cpp b/src/linearization/linearization_abs_qr.cpp
+index e41bcea..333177d 100644
+--- a/src/linearization/linearization_abs_qr.cpp
++++ b/src/linearization/linearization_abs_qr.cpp
+@@ -38,6 +38,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <tbb/blocked_range.h>
+ #include <tbb/parallel_for.h>
+ #include <tbb/parallel_reduce.h>
++#include <cstdlib>
++#include <utility>
++// lamaria-slam (X09): tbb::parallel_reduce sums the landmark blocks in a thread-dependent order, so two
++// runs of one binary differ (10 % on a long walk); BASALT_DETERMINISTIC=0 restores the fast version
++template <typename... Args>
++static auto basalt_reduce(Args&&... args) {
++  static const bool deterministic = [] {
++    const char* e = std::getenv("BASALT_DETERMINISTIC");
++    return !(e && *e && *e == '0');
++  }();
++  if (deterministic) return tbb::parallel_deterministic_reduce(std::forward<Args>(args)...);
++  return tbb::parallel_reduce(std::forward<Args>(args)...);
++}
++
+ 
+ #include <basalt/utils/ba_utils.h>
+ #include <basalt/linearization/imu_block.hpp>
+@@ -248,7 +262,7 @@ Scalar LinearizationAbsQR<Scalar, POSE_SIZE>::linearizeProblem(
+   };
+ 
+   tbb::blocked_range<size_t> range(0, num_landmarks);
+-  auto reduction_res = tbb::parallel_reduce(range, initial_value, body, join);
++  auto reduction_res = basalt_reduce(range, initial_value, body, join);
+ 
+   if (numerically_valid) *numerically_valid = reduction_res.second;
+ 
+@@ -302,7 +316,7 @@ Scalar LinearizationAbsQR<Scalar, POSE_SIZE>::backSubstitute(
+ 
+   tbb::blocked_range<size_t> range(0, landmark_block_idx.size());
+   Scalar l_diff =
+-      tbb::parallel_reduce(range, Scalar(0), body, std::plus<Scalar>());
++      basalt_reduce(range, Scalar(0), body, std::plus<Scalar>());
+ 
+   if (imu_lin_data) {
+     for (auto& imu_block : imu_blocks) {
+@@ -355,7 +369,7 @@ LinearizationAbsQR<Scalar, POSE_SIZE>::getJp_diag2() const {
+   Reductor r(aom.total_size, landmark_blocks);
+ 
+   tbb::blocked_range<size_t> range(0, landmark_block_idx.size());
+-  tbb::parallel_reduce(range, r);
++  basalt_reduce(range, r);
+   // r(range);
+ 
+   if (imu_lin_data) {
+@@ -575,7 +589,7 @@ void LinearizationAbsQR<Scalar, POSE_SIZE>::get_dense_H_b(MatX& H,
+ 
+   // go over all host frames
+   tbb::blocked_range<size_t> range(0, landmark_block_idx.size());
+-  tbb::parallel_reduce(range, r);
++  basalt_reduce(range, r);
+ 
+   // Add imu
+   add_dense_H_b_imu(r.H_, r.b_);
+diff --git a/src/mapper.cpp b/src/mapper.cpp
+index ff9df90..c7b8902 100644
+--- a/src/mapper.cpp
++++ b/src/mapper.cpp
+@@ -344,6 +344,8 @@ int main(int argc, char** argv) {
+     filter();
+     optimize();
+ 
++    saveTrajectoryButton();  // LaMAria: headless runs need the trajectory on disk
++
+     auto time_end = std::chrono::high_resolution_clock::now();
+ 
+     if (!result_path.empty()) {
+diff --git a/src/utils/keypoints.cpp b/src/utils/keypoints.cpp
+index d7c11cb..a5d241c 100644
+--- a/src/utils/keypoints.cpp
++++ b/src/utils/keypoints.cpp
+@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <unordered_set>
+ 
+ #include <basalt/utils/keypoints.h>
++#include <cstdlib>
+ 
+ #include <opencv2/features2d/features2d.hpp>
+ #include <opencv2/imgproc/imgproc.hpp>
+@@ -208,7 +209,14 @@ void detectKeypoints(
+       int points_added = 0;
+       int threshold = 40;
+ 
+-      while (points_added < num_points_cell && threshold >= 5) {
++      // lamaria-slam (v3 F10c): BASALT_FAST_MIN_THRESHOLD (default 5, upstream) stops the adaptive
++      // threshold earlier, so dark or flat cells stay empty instead of getting noise corners
++      // (a learned detector can then fill them, BASALT_KP_MODE=fill)
++      static const int min_threshold = [] {
++        const char* e = std::getenv("BASALT_FAST_MIN_THRESHOLD");
++        return (e && *e) ? std::atoi(e) : 5;
++      }();
++      while (points_added < num_points_cell && threshold >= min_threshold) {
+         std::vector<cv::KeyPoint> points;
+         cv::FAST(subImg, points, threshold);
+ 
+diff --git a/src/vi_estimator/ba_base.cpp b/src/vi_estimator/ba_base.cpp
+index 2960dad..ce1138f 100644
+--- a/src/vi_estimator/ba_base.cpp
++++ b/src/vi_estimator/ba_base.cpp
+@@ -34,6 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include <basalt/vi_estimator/ba_base.h>
++#include <algorithm>
++#include <limits>
+ 
+ #include <tbb/blocked_range.h>
+ #include <tbb/parallel_for.h>
+@@ -215,7 +217,8 @@ void BundleAdjustmentBase<Scalar_>::computeError(
+   tbb::blocked_range<size_t> range(0, host_frames.size());
+   Scalar init = 0;
+   auto join = std::plus<Scalar>();
+-  error = tbb::parallel_reduce(range, init, body, join);
++  static const bool deterministic = [] { const char* e = std::getenv("BASALT_DETERMINISTIC"); return !(e && *e && *e == '0'); }();
++  error = deterministic ? tbb::parallel_deterministic_reduce(range, init, body, join) : tbb::parallel_reduce(range, init, body, join);
+ 
+   if (outliers) {
+     outliers->clear();
+@@ -266,6 +269,24 @@ void BundleAdjustmentBase<Scalar_>::get_current_points(
+   }
+ }
+ 
++// lamaria-slam (v3 F08f): BASALT_OUTLIER_MIN_AGE=N keeps the observations of the N newest frames
++// out of the filter: their poses have had the fewest iterations, so a large residual there says
++// more about the pose than about the point; the observation is judged again when the frame is older
++template <class Scalar_>
++static int64_t outlierAgeCutoff(const BundleAdjustmentBase<Scalar_>& ba) {
++  static const int min_age = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_MIN_AGE");
++    return (e && *e) ? std::atoi(e) : 0;
++  }();
++  if (min_age <= 0) return std::numeric_limits<int64_t>::max();
++  std::vector<int64_t> ts;
++  for (const auto& kv : ba.frame_states) ts.push_back(kv.first);
++  for (const auto& kv : ba.frame_poses) ts.push_back(kv.first);
++  std::sort(ts.begin(), ts.end());
++  if (int(ts.size()) <= min_age) return std::numeric_limits<int64_t>::min();
++  return ts[ts.size() - min_age];  // observations in frames with t >= this are kept
++}
++
+ template <class Scalar_>
+ void BundleAdjustmentBase<Scalar_>::filterOutliers(Scalar outlier_threshold,
+                                                    int min_num_obs) {
+@@ -273,42 +294,153 @@ void BundleAdjustmentBase<Scalar_>::filterOutliers(Scalar outlier_threshold,
+   std::map<int, std::vector<std::pair<TimeCamId, Scalar>>> outliers;
+   computeError(error, &outliers, outlier_threshold);
+ 
+-  //  std::cout << "============================================" <<
+-  //  std::endl; std::cout << "Num landmarks: " << lmdb.numLandmarks() << "
+-  //  with outliners
+-  //  "
+-  //            << outliers.size() << std::endl;
++  // lamaria-slam (v3 F08c): BASALT_OUTLIER_KEEP_HOST=1 keeps a landmark whose *host* observation
++  // exceeds the threshold (upstream deletes it with all its observations; the host observation
++  // itself cannot be removed, the landmark is parameterised by it). Counters for the log.
++  static const bool keep_host = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_KEEP_HOST");
++    return e && *e && *e != '0';
++  }();
+ 
++  const int64_t age_cut = outlierAgeCutoff(*this);
+   for (const auto& kv : outliers) {
+     int num_obs = lmdb.numObservations(kv.first);
+-    int num_outliers = kv.second.size();
++    int num_host = 0;
++    std::set<TimeCamId> bad;
++    for (const auto& kv2 : kv.second) {
++      if (kv2.second == -2) num_host++;
++      else if (kv2.first.frame_id < age_cut) bad.emplace(kv2.first);
++    }
++    if (bad.empty() && (num_host == 0 || keep_host)) continue;
++    bool remove = (num_host > 0 && !keep_host) || (num_obs - int(bad.size()) < min_num_obs);
+ 
+-    bool remove = false;
++    if (remove) {
++      lmdb.removeLandmark(kv.first);
++      filter_removed_landmarks++;
++    } else if (!bad.empty()) {
++      lmdb.removeObservations(kv.first, bad);
++      filter_removed_obs += bad.size();
++    }
++  }
++}
+ 
+-    if (num_obs - num_outliers < min_num_obs) remove = true;
++template <class Scalar_>
++bool BundleAdjustmentBase<Scalar_>::filterOutliersV2(Scalar thr, int min_num_obs, Scalar max_frac,
++                                                     bool lm_rule) {
++  Scalar error;
++  std::map<int, std::vector<std::pair<TimeCamId, Scalar>>> all;
++  computeError(error, &all, Scalar(0));
++
++  size_t n_total = 0, n_above = 0;
++  std::vector<Scalar> all_es;
++  for (const auto& kv : all)
++    for (const auto& kv2 : kv.second)
++      if (kv2.second >= 0) { n_total++; all_es.push_back(kv2.second); if (kv2.second > thr) n_above++; }
++  if (n_total == 0) return true;
++  if (max_frac > 0 && Scalar(n_above) > max_frac * Scalar(n_total)) {
++    // BASALT_OUTLIER_SKIP_MED (px, 0 = off): a burst is skipped only when the solve is otherwise good
++    // (median residual below this); a high median means the solve itself is off (X06b: the dark walk
++    // without a filter sits at 1.4 to 4.8 px) and the filter is what brings it back
++    static const Scalar skip_med = [] {
++      const char* e = std::getenv("BASALT_OUTLIER_SKIP_MED");
++      return Scalar((e && *e) ? std::atof(e) : 0.0);
++    }();
++    bool skip = true;
++    if (skip_med > 0) {
++      const size_t m = all_es.size() / 2;
++      std::nth_element(all_es.begin(), all_es.begin() + m, all_es.end());
++      skip = all_es[m] < skip_med;
++    }
++    if (skip) {
++      filter_skipped_frames++;
++      return false;
++    }
++  }
+ 
+-    //    std::cout << "\tlm_id: " << kv.first << " num_obs: " << num_obs
+-    //              << " outliers: " << num_outliers << " [";
++  // upstream's host rule (a landmark whose host observation exceeds the threshold is deleted),
++  // unless BASALT_OUTLIER_KEEP_HOST=1; needs a pass at the threshold because the host entry at
++  // threshold 0 carries no residual
++  static const bool keep_host_v2 = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_KEEP_HOST");
++    return e && *e && *e != '0';
++  }();
++  std::set<int> host_bad;
++  if (!keep_host_v2) {
++    std::map<int, std::vector<std::pair<TimeCamId, Scalar>>> at_thr;
++    computeError(error, &at_thr, thr);
++    for (const auto& kv : at_thr)
++      for (const auto& kv2 : kv.second)
++        if (kv2.second == -2) { host_bad.insert(kv.first); break; }
++  }
+ 
++  const int64_t age_cut = outlierAgeCutoff(*this);
++  for (const auto& kv : all) {
++    if (host_bad.count(kv.first)) {
++      lmdb.removeLandmark(kv.first);
++      filter_removed_landmarks++;
++      continue;
++    }
++    std::set<TimeCamId> bad;
++    std::vector<Scalar> es;
++    bool invalid = false;
+     for (const auto& kv2 : kv.second) {
+-      if (kv2.second == -2) remove = true;
+-
+-      //      std::cout << kv2.second << ", ";
++      const bool young = kv2.first.frame_id >= age_cut;
++      if (kv2.second == -1) { if (!young) { bad.emplace(kv2.first); invalid = true; } }
++      else if (kv2.second >= 0) { es.push_back(kv2.second); if (kv2.second > thr && !young) bad.emplace(kv2.first); }
+     }
+-
+-    //    std::cout << "] " << std::endl;
+-
+-    if (remove) {
++    if (bad.empty()) continue;
++    if (lm_rule && !invalid && !es.empty()) {
++      const size_t m = es.size() / 2;
++      std::nth_element(es.begin(), es.begin() + m, es.end());
++      // BASALT_OUTLIER_LM_MED (px, F18): bound on the landmark's median residual below which its odd
++      // observations are removed; default half the threshold
++      static const Scalar lm_med = [thr] {
++        const char* e = std::getenv("BASALT_OUTLIER_LM_MED");
++        return Scalar((e && *e) ? std::atof(e) : thr / 2);
++      }();
++      if (es[m] > lm_med) continue;  // the landmark itself is off: keep its observations, let the solve move it
++    }
++    const int num_obs = lmdb.numObservations(kv.first);
++    if (num_obs - int(bad.size()) < min_num_obs) {
+       lmdb.removeLandmark(kv.first);
++      filter_removed_landmarks++;
+     } else {
+-      std::set<TimeCamId> outliers;
+-      for (const auto& kv2 : kv.second) outliers.emplace(kv2.first);
+-      lmdb.removeObservations(kv.first, outliers);
++      lmdb.removeObservations(kv.first, bad);
++      filter_removed_obs += bad.size();
+     }
+   }
++  return true;
++}
++
++template <class Scalar_>
++Scalar_ BundleAdjustmentBase<Scalar_>::filterOutliersAdaptive(Scalar floor_px, Scalar k, int min_num_obs,
++                                                              size_t* removed_obs) {
++  // statistics pass: every non-host residual (threshold 0 collects them all; computeError reports
++  // the host observation as -2 and a failed projection as -1 at any threshold, both skipped here)
++  Scalar error;
++  std::map<int, std::vector<std::pair<TimeCamId, Scalar>>> all;
++  computeError(error, &all, Scalar(0));
++
++  std::vector<Scalar> es;
++  for (const auto& kv : all)
++    for (const auto& kv2 : kv.second)
++      if (kv2.second >= 0) es.push_back(kv2.second);
++  Scalar thr = floor_px;
++  if (es.size() >= 50) {
++    const size_t m = es.size() / 2;
++    std::nth_element(es.begin(), es.begin() + m, es.end());
++    const Scalar med = es[m];
++    for (Scalar& e : es) e = std::abs(e - med);
++    std::nth_element(es.begin(), es.begin() + m, es.end());
++    const Scalar sigma = Scalar(1.4826) * es[m];
++    thr = std::max(floor_px, med + k * sigma);
++  }
+ 
+-  // std::cout << "============================================" <<
+-  // std::endl;
++  // removal pass with upstream's own rules (host observation above the threshold removes the landmark)
++  const int before = lmdb.numObservations();
++  filterOutliers(thr, min_num_obs);
++  if (removed_obs) *removed_obs = size_t(std::max(0, before - lmdb.numObservations()));
++  return thr;
+ }
+ 
+ template <class Scalar_>
+diff --git a/src/vi_estimator/sqrt_keypoint_vio.cpp b/src/vi_estimator/sqrt_keypoint_vio.cpp
+index 55984fc..7cc9e08 100644
+--- a/src/vi_estimator/sqrt_keypoint_vio.cpp
++++ b/src/vi_estimator/sqrt_keypoint_vio.cpp
+@@ -34,6 +34,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+ #include <basalt/vi_estimator/marg_helper.h>
++#include <basalt/utils/ba_utils.h>
++#include <basalt/utils/keypoints.h>
++#include <fstream>
++#include <cstdlib>
++#include <iostream>
++#include <algorithm>
++#include <limits>
++#include <vector>
+ #include <basalt/vi_estimator/sqrt_keypoint_vio.h>
+ 
+ #include <basalt/optimization/accumulator.h>
+@@ -55,6 +63,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include <chrono>
+ 
+ namespace basalt {
++static long stereo_check_kept = 0, stereo_check_dropped = 0;
++// BASALT_STEREO_CHECK (F19): relative tolerance on inverse distance between a same-frame stereo observation and
++// the landmark's temporal triangulation; 0 = off
++static double stereo_check_tol() {
++  static const double v = [] {
++    const char* e = std::getenv("BASALT_STEREO_CHECK");
++    const double t = (e && *e) ? std::atof(e) : 0.0;
++    std::cerr << "BASALT_STEREO_CHECK: " << t << std::endl;
++    return t;
++  }();
++  return v;
++}
+ 
+ template <class Scalar_>
+ SqrtKeypointVioEstimator<Scalar_>::SqrtKeypointVioEstimator(
+@@ -147,6 +167,85 @@ void SqrtKeypointVioEstimator<Scalar_>::initialize(
+   initialize(bg, ba);
+ }
+ 
++// lamaria-slam (v4 F14): linear visual-inertial initialisation over the first window.
++// Unknowns: body velocity v0 and gravity g at the first frame (frame-0 body frame b0) and the depth
++// of every cam0 feature seen in frame 0 along its bearing. Rotations between frames come from the
++// gyro, the accelerometer enters through its double integral; each later observation of a feature
++// gives the linear constraint f_ij x q_ij = 0 with q_ij the feature in camera j. Least squares.
++struct ViInitFrame {
++  double t_s;                                   // since frame 0
++  Sophus::SO3d R_b0_bj;                         // gyro-integrated
++  Eigen::Vector3d dp, dv;                       // double / single integral of the rotated specific force, b0 frame
++  Eigen::aligned_map<KeypointId, Eigen::Vector3d> bearings;  // cam0, unit vectors
++};
++struct ViInitResult {
++  bool ok = false;
++  Eigen::Vector3d v0 = Eigen::Vector3d::Zero(), g = Eigen::Vector3d::Zero();
++  int n_feat = 0, n_obs = 0;
++  double rms = 0;
++};
++static ViInitResult viInitLinear(const std::vector<ViInitFrame>& frames, const Sophus::SE3d& T_b_c, int min_obs,
++                                 const Eigen::Vector3d* g_fixed = nullptr) {  // g_fixed (b0 frame): solve only velocity and depths
++  ViInitResult r;
++  if (frames.size() < 3) return r;
++  const Eigen::Matrix3d R_bc = T_b_c.rotationMatrix();
++  const Eigen::Vector3d t_bc = T_b_c.translation();
++  std::vector<KeypointId> ids;
++  for (const auto& kv : frames[0].bearings) {
++    int n = 0;
++    for (size_t j = 1; j < frames.size(); j++) n += frames[j].bearings.count(kv.first);
++    if (n >= min_obs) ids.push_back(kv.first);
++  }
++  const int N = ids.size();
++  if (N < 8) return r;
++  Eigen::MatrixXd H = Eigen::MatrixXd::Zero(6 + N, 6 + N);
++  Eigen::VectorXd b = Eigen::VectorXd::Zero(6 + N);
++  std::vector<std::tuple<int, size_t, Eigen::Matrix<double, 3, 7>, Eigen::Vector3d>> rows;  // for the residual
++  for (int i = 0; i < N; i++) {
++    const Eigen::Vector3d f0 = frames[0].bearings.at(ids[i]);
++    for (size_t j = 1; j < frames.size(); j++) {
++      auto it = frames[j].bearings.find(ids[i]);
++      if (it == frames[j].bearings.end()) continue;
++      const Eigen::Vector3d& fj = it->second;
++      const Eigen::Matrix3d A = R_bc.transpose() * frames[j].R_b0_bj.inverse().matrix();
++      const Eigen::Matrix3d S = Sophus::SO3d::hat(fj);
++      const double t = frames[j].t_s;
++      Eigen::Matrix<double, 3, 7> J;  // columns: v0 (3), g (3), lambda_i (1)
++      J.block<3, 3>(0, 0) = -t * S * A;
++      J.block<3, 3>(0, 3) = -0.5 * t * t * S * A;
++      J.col(6) = S * A * R_bc * f0;
++      Eigen::Vector3d rhs = -S * (A * t_bc - A * frames[j].dp - R_bc.transpose() * t_bc);
++      if (g_fixed) {  // gravity known: its term moves to the right-hand side, its columns are dropped
++        rhs -= J.block<3, 3>(0, 3) * (*g_fixed);
++        J.block<3, 3>(0, 3).setZero();
++      }
++      // scatter into the normal equations: unknown order [v0 g lambda_0 .. lambda_N-1]
++      Eigen::Matrix<double, 7, 7> JtJ = J.transpose() * J;
++      Eigen::Matrix<double, 7, 1> Jtb = J.transpose() * rhs;
++      int idx[7] = {0, 1, 2, 3, 4, 5, 6 + i};
++      for (int a = 0; a < 7; a++) {
++        b[idx[a]] += Jtb[a];
++        for (int c = 0; c < 7; c++) H(idx[a], idx[c]) += JtJ(a, c);
++      }
++      rows.emplace_back(i, j, J, rhs);
++    }
++  }
++  if (g_fixed) H.block<3, 3>(3, 3).setIdentity();  // keep the system regular; those unknowns are then 0 and unused
++  Eigen::VectorXd x = H.ldlt().solve(b);
++  if (!x.allFinite()) return r;
++  if (g_fixed) x.segment<3>(3) = *g_fixed;
++  double ss = 0; int n = 0;
++  for (const auto& [i, j, J, rhs] : rows) {
++    Eigen::Matrix<double, 7, 1> xi; xi << x.head<6>(), x[6 + i];
++    ss += (J * xi - rhs).squaredNorm(); n++;
++  }
++  r.v0 = x.head<3>(); r.g = x.segment<3>(3); r.n_feat = N; r.n_obs = n; r.rms = std::sqrt(ss / std::max(n, 1));
++  int pos = 0; for (int i = 0; i < N; i++) if (x[6 + i] > 0) pos++;
++  // depth signs are meaningless without parallax (a stationary start): the velocity is then simply ~0
++  r.ok = r.g.norm() > 8.0 && r.g.norm() < 11.5 && r.v0.norm() < 6.0 && (pos > N / 2 || r.v0.norm() < 0.2);
++  return r;
++}
++
+ template <class Scalar_>
+ void SqrtKeypointVioEstimator<Scalar_>::initialize(const Eigen::Vector3d& bg_,
+                                                    const Eigen::Vector3d& ba_) {
+@@ -183,19 +282,147 @@ void SqrtKeypointVioEstimator<Scalar_>::initialize(const Eigen::Vector3d& bg_,
+       // curr_frame->t_ns += calib.cam_time_offset_ns;
+ 
+       if (!initialized) {
++        // lamaria-slam (v4 F11): BASALT_INIT_WINDOW_S=w: the first state is created w seconds after the first
++        // frame, with gravity taken from the mean accelerometer over that window instead of one sample
++        // (upstream used the single sample at the first frame, which on a walking wearer carries the
++        // stride acceleration and starts the filter with a wrong attitude; the first seconds then blow up).
++        static const int64_t init_window_ns = [] {
++          const char* e = std::getenv("BASALT_INIT_WINDOW_S");
++          double v = e ? std::atof(e) : 0.0;
++          std::cerr << "BASALT_INIT_WINDOW_S: " << v << std::endl;
++          return int64_t(v * 1e9);
++        }();
++        static int64_t first_frame_t_ns = -1;
++        static Vec3 init_accel_sum = Vec3::Zero();  // accelerometer samples rotated into the first sample's frame
++        static long init_accel_n = 0;
++        static int64_t init_prev_t_ns = -1;
++        static Sophus::SO3<Scalar> R_first_cur;      // rotation of the current sample frame w.r.t. the first sample's frame (gyro integrated)
++        // BASALT_INIT_VEL=1 (F14): linear visual-inertial initialisation of velocity and gravity over the window
++        // 1: velocity, gravity and depths solved together; 2: gravity fixed from the rotated accelerometer mean, velocity and depths solved
++        static const int init_vel_mode = [] { const char* e = std::getenv("BASALT_INIT_VEL"); int v = e ? std::atoi(e) : 0; std::cerr << "BASALT_INIT_VEL: " << v << std::endl; return v; }();
++        static const bool init_vel = init_vel_mode > 0;
++        static std::vector<ViInitFrame> init_frames;
++        static Sophus::SO3d R_b0_cur; static Eigen::Vector3d init_dp = Eigen::Vector3d::Zero(), init_dv = Eigen::Vector3d::Zero();
++        static int64_t init_imu_prev_t_ns = -1;  // preintegration from the first frame on
++        if (first_frame_t_ns < 0) first_frame_t_ns = curr_frame->t_ns;
++
+         while (data->t_ns < curr_frame->t_ns) {
+           data = popFromImuDataQueue();
+           if (!data) break;
+           data->accel = calib.calib_accel_bias.getCalibrated(data->accel);
+           data->gyro = calib.calib_gyro_bias.getCalibrated(data->gyro);
+-          // std::cout << "Skipping IMU data.." << std::endl;
++          if (init_prev_t_ns >= 0)
++            R_first_cur = R_first_cur * Sophus::SO3<Scalar>::exp(data->gyro * Scalar((data->t_ns - init_prev_t_ns) * 1e-9));
++          init_prev_t_ns = data->t_ns;
++          init_accel_sum += R_first_cur * data->accel;
++          init_accel_n++;
++          if (init_vel && data->t_ns >= first_frame_t_ns) {
++            if (init_imu_prev_t_ns >= 0) {
++              const double dt = (data->t_ns - init_imu_prev_t_ns) * 1e-9;
++              const Eigen::Vector3d a = R_b0_cur * data->accel.template cast<double>();
++              init_dp += init_dv * dt + 0.5 * a * dt * dt;
++              init_dv += a * dt;
++              R_b0_cur = R_b0_cur * Sophus::SO3d::exp(data->gyro.template cast<double>() * dt);
++            }
++            init_imu_prev_t_ns = data->t_ns;
++          }
++        }
++        if (init_vel) {
++          ViInitFrame fr; fr.t_s = (curr_frame->t_ns - first_frame_t_ns) * 1e-9; fr.R_b0_bj = R_b0_cur; fr.dp = init_dp; fr.dv = init_dv;
++          for (const auto& kv : curr_frame->observations.at(0)) {
++            Vec4 p3d; Vec2 px = kv.second.translation().template cast<Scalar>();
++            if (calib.intrinsics[0].unproject(px, p3d)) fr.bearings[kv.first] = p3d.template head<3>().template cast<double>().normalized();
++          }
++          init_frames.push_back(fr);
++        }
++        if (init_window_ns > 0 && curr_frame->t_ns < first_frame_t_ns + init_window_ns) {
++          prev_frame = nullptr;
++          continue;
+         }
+ 
+         Vec3 vel_w_i_init;
+         vel_w_i_init.setZero();
+ 
++        // mean specific force over the window, expressed in the latest sample's frame (the head may have turned meanwhile)
++        Vec3 g_meas = (init_window_ns > 0 && init_accel_n > 0) ? Vec3(R_first_cur.inverse() * (init_accel_sum / Scalar(init_accel_n))) : data->accel;
++        if (init_window_ns > 0)
++          std::cerr << "init window: " << init_accel_n << " IMU samples, mean accel " << g_meas.transpose()
++                    << " (|a| " << g_meas.norm() << "), first state at +" << (curr_frame->t_ns - first_frame_t_ns) * 1e-9 << " s" << std::endl;
+         T_w_i_init.setQuaternion(Eigen::Quaternion<Scalar>::FromTwoVectors(
+-            data->accel, Vec3::UnitZ()));
++            g_meas, Vec3::UnitZ()));
++        if (init_vel) {
++          // the recording may start over-exposed (no tracks): take the first frame with enough features as the
++          // reference and re-base times, rotations and the IMU integrals on it
++          {
++            std::string dbg = "init vel: bearings per frame (shared with previous):";
++            for (size_t j = 0; j < init_frames.size(); j++) {
++              int shared = 0;
++              if (j > 0) for (const auto& kv : init_frames[j].bearings) shared += init_frames[j - 1].bearings.count(kv.first);
++              dbg += " " + std::to_string(init_frames[j].bearings.size()) + "(" + std::to_string(shared) + ")";
++            }
++            std::cerr << dbg << std::endl;
++          }
++          // reference = the earliest frame with at least 15 features that survive 5 or more later frames
++          // (the tracker re-seeds its ids in the first frames of a recording), else the best one
++          size_t ref = 0;
++          {
++            auto survivors = [&](size_t r) {
++              int n = 0;
++              for (const auto& kv : init_frames[r].bearings) {
++                int c = 0;
++                for (size_t j = r + 1; j < init_frames.size(); j++) c += init_frames[j].bearings.count(kv.first);
++                if (c >= 5) n++;
++              }
++              return n;
++            };
++            int best = -1;
++            for (size_t r = 0; r + 6 <= init_frames.size(); r++) {
++              int n = survivors(r);
++              if (n >= 15) { ref = r; break; }
++              if (n > best) { best = n; ref = r; }
++            }
++          }
++          if (ref > 0) {
++            const ViInitFrame r0 = init_frames[ref];
++            const Sophus::SO3d R_br_b0 = r0.R_b0_bj.inverse();
++            std::vector<ViInitFrame> rebased;
++            for (size_t j = ref; j < init_frames.size(); j++) {
++              ViInitFrame f = init_frames[j];
++              const double dt = f.t_s - r0.t_s;
++              f.dp = R_br_b0 * (f.dp - r0.dp - r0.dv * dt);
++              f.dv = R_br_b0 * (f.dv - r0.dv);
++              f.R_b0_bj = R_br_b0 * f.R_b0_bj;
++              f.t_s = dt;
++              rebased.push_back(f);
++            }
++            init_frames.swap(rebased);
++            std::cerr << "init vel: reference frame moved to +" << r0.t_s << " s (" << r0.bearings.size() << " features there)" << std::endl;
++          }
++          const ViInitFrame& lastf = init_frames.back();
++          const Eigen::Vector3d g_from_mean = -9.80665 * (lastf.R_b0_bj * g_meas.template cast<double>().normalized());  // reference-frame coordinates
++          ViInitResult vr = viInitLinear(init_frames, calib.T_i_c[0].template cast<double>(), 5, init_vel_mode == 2 ? &g_from_mean : nullptr);
++          std::cerr << "init vel: " << init_frames.size() << " frames, " << vr.n_feat << " features, " << vr.n_obs
++                    << " obs, rms " << vr.rms << ", v0 " << vr.v0.transpose() << " (|v| " << vr.v0.norm() << "), g " << vr.g.transpose()
++                    << " (|g| " << vr.g.norm() << ")" << (vr.ok ? " accepted" : " REJECTED (fallback: mean accel, zero velocity)") << std::endl;
++          if (vr.ok) {
++            const ViInitFrame& last = init_frames.back();
++            Eigen::Vector3d g_unit = vr.g.normalized();
++            // frame-0 attitude from the estimated gravity (specific force ~ -g), then the gyro to the end of the window
++            Eigen::Quaterniond q_w_b0 = Eigen::Quaterniond::FromTwoVectors(-g_unit, Eigen::Vector3d::UnitZ());
++            Sophus::SO3d R_w_b0(q_w_b0);
++            Sophus::SO3d R_w_bend = R_w_b0 * last.R_b0_bj;
++            const Eigen::Vector3d g_b0 = 9.80665 * g_unit;
++            Eigen::Vector3d v_end_b0 = vr.v0 + g_b0 * last.t_s + last.dv;
++            Eigen::Vector3d p_end_b0 = vr.v0 * last.t_s + 0.5 * g_b0 * last.t_s * last.t_s + last.dp;
++            T_w_i_init = Sophus::SE3<Scalar>(R_w_bend.template cast<Scalar>(), (R_w_b0 * p_end_b0).template cast<Scalar>());
++            vel_w_i_init = (R_w_b0 * v_end_b0).template cast<Scalar>();
++            // g_meas is expressed in the end-of-window frame; bring it to b0 before comparing
++            const Eigen::Vector3d g_meas_b0 = last.R_b0_bj * g_meas.template cast<double>().normalized();
++            std::cerr << "init vel: end velocity (world) " << vel_w_i_init.transpose() << ", gravity-direction change vs mean accel "
++                      << std::acos(std::min(1.0, std::abs(g_meas_b0.dot(-g_unit)))) * 180 / M_PI << " deg" << std::endl;
++          }
++          init_frames.clear(); init_frames.shrink_to_fit();
++        }
+ 
+         last_state_t_ns = curr_frame->t_ns;
+         imu_meas[last_state_t_ns] =
+@@ -309,6 +536,21 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+   stats_sums_.add("frame_id", opt_flow_meas->t_ns).format("none");
+   Timer t_total;
+ 
++  // lamaria-slam (v3 F01): env-gated front-end gates, announced once
++  static const Scalar imu_gate_px = [] {
++    const char* e = std::getenv("BASALT_IMU_GATE_PX");
++    const double v = (e && *e) ? std::atof(e) : 0.0;
++    std::cerr << "BASALT_IMU_GATE_PX: " << v << std::endl;
++    return Scalar(v);
++  }();
++  static long imu_gate_seen = 0, imu_gate_dropped = 0, imu_gate_frames = 0;
++  static long epi_gate_seen = 0, epi_gate_dropped = 0;
++  ++imu_gate_frames;
++  if (imu_gate_px > 0 && imu_gate_frames % 500 == 0)
++    std::cerr << "imu_gate: dropped " << imu_gate_dropped << " of " << imu_gate_seen << " observations so far" << std::endl;
++  if (epi_gate_dropped + epi_gate_seen > 0 && imu_gate_frames % 500 == 0)
++    std::cerr << "epi_gate: dropped " << epi_gate_dropped << " candidate pairs, passed " << epi_gate_seen << std::endl;
++
+   if (meas.get()) {
+     BASALT_ASSERT(frame_states[last_state_t_ns].getState().t_ns ==
+                   meas->get_start_t_ns());
+@@ -333,12 +575,40 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+   // save results
+   prev_opt_flow_res[opt_flow_meas->t_ns] = opt_flow_meas;
+ 
++  // lamaria-slam (v3 F04): "untrustworthy image" rule. If fewer than BASALT_MIN_OBS_FRAME tracked
++  // landmarks reach this frame in cam0, the image is treated as uninformative: no observations are
++  // added (the state is carried by the IMU) and no new landmarks are created from it.
++  static const int min_obs_frame = [] {
++    const char* e = std::getenv("BASALT_MIN_OBS_FRAME");
++    const int v = (e && *e) ? std::atoi(e) : 0;
++    std::cerr << "BASALT_MIN_OBS_FRAME: " << v << std::endl;
++    return v;
++  }();
++  static long untrusted_frames = 0;
++  bool frame_untrusted = false;
++  if (min_obs_frame > 0 && !opt_flow_meas->observations.empty()) {
++    int n_lm = 0;
++    for (const auto& kv_obs : opt_flow_meas->observations[0])
++      if (lmdb.landmarkExists(kv_obs.first)) n_lm++;
++    frame_untrusted = n_lm < min_obs_frame;
++    if (frame_untrusted && ++untrusted_frames % 100 == 0)
++      std::cerr << "untrusted frames so far: " << untrusted_frames << std::endl;
++  }
++
+   // Make new residual for existing keypoints
+   int connected0 = 0;
+   std::map<int64_t, int> num_points_connected;
+-  std::unordered_set<int> unconnected_obs0;
++  // lamaria-slam (v4 F02): with BASALT_MONO_CAMS=1 every camera's unconnected tracks become landmark
++  // candidates hosted in that camera; upstream only creates landmarks for cam0 tracks
++  static const bool mono_cams = [] {
++    const char* e = std::getenv("BASALT_MONO_CAMS");
++    return e && *e && *e != '0';
++  }();
++  std::vector<std::unordered_set<int>> unconnected_obs(opt_flow_meas->observations.size());
++  std::unordered_set<int>& unconnected_obs0 = unconnected_obs[0];
+   for (size_t i = 0; i < opt_flow_meas->observations.size(); i++) {
+     TimeCamId tcid_target(opt_flow_meas->t_ns, i);
++    if (frame_untrusted) break;
+ 
+     for (const auto& kv_obs : opt_flow_meas->observations[i]) {
+       int kpt_id = kv_obs.first;
+@@ -350,6 +620,35 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+         kobs.kpt_id = kpt_id;
+         kobs.pos = kv_obs.second.translation().cast<Scalar>();
+ 
++        // lamaria-slam (v3 F01): IMU-consistency gate. The new frame's state is the IMU
++        // prediction at this point; a track whose observation lies farther than
++        // BASALT_IMU_GATE_PX from the predicted reprojection of its landmark moves
++        // inconsistently with the ego-motion (dynamic object, body part, reflection).
++        if (imu_gate_px > 0 && tcid_host.frame_id != tcid_target.frame_id) {
++          const Keypoint<Scalar>& kpt_pos = lmdb.getLandmark(kpt_id);
++          PoseStateWithLin<Scalar> state_h = getPoseStateWithLin(tcid_host.frame_id);
++          PoseStateWithLin<Scalar> state_t = getPoseStateWithLin(tcid_target.frame_id);
++          Eigen::Matrix<Scalar, 4, 4> T_t_h = computeRelPose(state_h.getPose(), calib.T_i_c[tcid_host.cam_id],
++                                      state_t.getPose(), calib.T_i_c[tcid_target.cam_id]).matrix();
++          Vec2 res;
++          bool valid = std::visit(
++              [&](const auto& cam) { return linearizePoint(kobs.pos, kpt_pos, T_t_h, cam, res); },
++              calib.intrinsics[tcid_target.cam_id].variant);
++          imu_gate_seen++;
++          if (valid && res.norm() > imu_gate_px) {
++            imu_gate_dropped++;
++            // optional dump of the dropped observations (where in the image the liars are)
++            static std::ofstream gate_dump = [] {
++              const char* e = std::getenv("BASALT_GATE_DUMP");
++              return (e && *e) ? std::ofstream(e) : std::ofstream();
++            }();
++            if (gate_dump.is_open())
++              gate_dump << tcid_target.frame_id << ' ' << tcid_target.cam_id << ' ' << kobs.pos.x() << ' '
++                        << kobs.pos.y() << ' ' << res.norm() << '\n';
++            continue;
++          }
++        }
++
+         lmdb.addObservation(tcid_target, kobs);
+         // obs[tcid_host][tcid_target].push_back(kobs);
+ 
+@@ -360,8 +659,8 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+ 
+         if (i == 0) connected0++;
+       } else {
+-        if (i == 0) {
+-          unconnected_obs0.emplace(kpt_id);
++        if (i == 0 || mono_cams) {
++          unconnected_obs[i].emplace(kpt_id);
+         }
+       }
+     }
+@@ -377,6 +676,7 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+               << unconnected_obs0.size() << std::endl;
+   }
+ 
++  if (take_kf && frame_untrusted) { take_kf = false; }
+   if (take_kf) {
+     // Triangulate new points from one of the observations (with sufficient
+     // baseline) and make keyframe for camera 0
+@@ -384,10 +684,12 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+     frames_after_kf = 0;
+     kf_ids.emplace(last_state_t_ns);
+ 
+-    TimeCamId tcidl(opt_flow_meas->t_ns, 0);
+-
+     int num_points_added = 0;
+-    for (int lm_id : unconnected_obs0) {
++    for (size_t host_cam = 0; host_cam < unconnected_obs.size(); host_cam++) {
++    if (host_cam > 0 && !mono_cams) break;
++    TimeCamId tcidl(opt_flow_meas->t_ns, host_cam);
++    for (int lm_id : unconnected_obs[host_cam]) {
++      if (lmdb.landmarkExists(lm_id)) continue;  // created already from another host camera this frame
+       // Find all observations
+       std::map<TimeCamId, KeypointObservation<Scalar>> kp_obs;
+ 
+@@ -407,16 +709,52 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+         }
+       }
+ 
++      // lamaria-slam (B21): relative near-landmark cap, BASALT_NEAR_FRAC=f rejects new landmarks
++      // closer than f times the current median landmark distance (0 = off)
++      static const Scalar near_frac = [] {
++        const char* e = std::getenv("BASALT_NEAR_FRAC");
++        const double v = (e && *e) ? std::atof(e) : 0.0;
++        std::cerr << "BASALT_NEAR_FRAC: " << v << std::endl;
++        return Scalar(v);
++      }();
++      Scalar rel_max_inv_dist = std::numeric_limits<Scalar>::max();
++      if (near_frac > 0 && lmdb.numLandmarks() >= 20) {
++        std::vector<Scalar> invs;
++        invs.reserve(lmdb.numLandmarks());
++        for (const auto& kv_lm : lmdb.getLandmarks()) invs.push_back(kv_lm.second.inv_dist);
++        std::nth_element(invs.begin(), invs.begin() + invs.size() / 2, invs.end());
++        const Scalar median_inv = invs[invs.size() / 2];
++        if (median_inv > 0) rel_max_inv_dist = median_inv / near_frac;
++      }
++
+       // triangulate
+       bool valid_kp = false;
++      TimeCamId tri_tcid; Scalar tri_dist2 = 0;
+       const Scalar min_triang_distance2 =
+           Scalar(config.vio_min_triangulation_dist *
+                  config.vio_min_triangulation_dist);
+       for (const auto& kv_obs : kp_obs) {
+         if (valid_kp) break;
+         TimeCamId tcido = kv_obs.first;
+-
+-        const Vec2 p0 = opt_flow_meas->observations.at(0)
++        // lamaria-slam (v3 X05): never triangulate a keypoint with itself. Upstream relies on the
++        // baseline check to reject this pair, but in float the relative pose of a frame with itself
++        // is not identity once the state has diverged far from the origin (one ulp at 1e6 m is
++        // 6 cm), and the degenerate single-observation landmark then crashes the QR.
++        if (tcido == tcidl) continue;
++        // lamaria-slam (v3 F14c): BASALT_STEREO_NO_TRIANG=1 never triangulates a new landmark from the
++        // same-frame stereo pair alone (a wrong stereo match across the 75 degree pair would fix a wrong
++        // depth from the start); the stereo observation is still added and constrains the landmark later
++        static const bool stereo_no_triang = [] {
++          const char* e = std::getenv("BASALT_STEREO_NO_TRIANG");
++          return e && *e && *e != '0';
++        }();
++        if (stereo_no_triang && tcido.frame_id == tcidl.frame_id) continue;
++        // lamaria-slam (v3 appendix F19): BASALT_STEREO_CHECK=tol: the same-frame stereo pair is not used
++        // for triangulation; once a temporal pair has triangulated the landmark, the stereo observation is
++        // kept only if the stereo triangulation agrees in inverse distance within tol (relative), else dropped
++        if (stereo_check_tol() > 0 && tcido.frame_id == tcidl.frame_id) continue;
++
++        const Vec2 p0 = opt_flow_meas->observations.at(tcidl.cam_id)
+                             .at(lm_id)
+                             .translation()
+                             .cast<Scalar>();
+@@ -427,22 +765,52 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+                             .template cast<Scalar>();
+ 
+         Vec4 p0_3d, p1_3d;
+-        bool valid1 = calib.intrinsics[0].unproject(p0, p0_3d);
++        bool valid1 = calib.intrinsics[tcidl.cam_id].unproject(p0, p0_3d);
+         bool valid2 = calib.intrinsics[tcido.cam_id].unproject(p1, p1_3d);
+         if (!valid1 || !valid2) continue;
+ 
+         SE3 T_i0_i1 = getPoseStateWithLin(tcidl.frame_id).getPose().inverse() *
+                       getPoseStateWithLin(tcido.frame_id).getPose();
+         SE3 T_0_1 =
+-            calib.T_i_c[0].inverse() * T_i0_i1 * calib.T_i_c[tcido.cam_id];
++            calib.T_i_c[tcidl.cam_id].inverse() * T_i0_i1 * calib.T_i_c[tcido.cam_id];
+ 
+         if (T_0_1.translation().squaredNorm() < min_triang_distance2) continue;
+ 
++        // lamaria-slam (v3 F03): temporal epipolar gate for new landmarks. T_0_1 comes from the
++        // IMU-predicted pose of the new frame, so a candidate whose two observations violate the
++        // epipolar constraint moved on its own (dynamic object, body part); BASALT_EPI_GATE is the
++        // threshold in the same units as optical_flow_epipolar_error (0 = off).
++        static const Scalar epi_gate = [] {
++          const char* e = std::getenv("BASALT_EPI_GATE");
++          const double v = (e && *e) ? std::atof(e) : 0.0;
++          std::cerr << "BASALT_EPI_GATE: " << v << std::endl;
++          return Scalar(v);
++        }();
++        if (epi_gate > 0) {
++          Eigen::Matrix4d E;
++          computeEssential(T_0_1.template cast<double>(), E);
++          const double epi_err = std::abs(p0_3d.template cast<double>().transpose() * E * p1_3d.template cast<double>());
++          if (epi_err > epi_gate) {
++            epi_gate_dropped++;
++            continue;
++          }
++          epi_gate_seen++;
++        }
++
+         Vec4 p0_triangulated = triangulate(p0_3d.template head<3>(),
+                                            p1_3d.template head<3>(), T_0_1);
+ 
++        // lamaria-slam: the inverse-distance cap (upstream: 3.0, i.e. nothing closer than 0.33 m)
++        // can be tightened with BASALT_MAX_INV_DIST to reject near features (wearer's body, B20)
++        static const Scalar max_inv_dist = [] {
++          const char* e = std::getenv("BASALT_MAX_INV_DIST");
++          const double v = (e && *e) ? std::atof(e) : 3.0;
++          std::cerr << "BASALT_MAX_INV_DIST: " << v << std::endl;
++          return Scalar(v);
++        }();
+         if (p0_triangulated.array().isFinite().all() &&
+-            p0_triangulated[3] > 0 && p0_triangulated[3] < 3.0) {
++            p0_triangulated[3] > 0 && p0_triangulated[3] < max_inv_dist &&
++            p0_triangulated[3] < rel_max_inv_dist) {
+           Keypoint<Scalar> kpt_pos;
+           kpt_pos.host_kf_id = tcidl;
+           kpt_pos.direction =
+@@ -452,15 +820,44 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+ 
+           num_points_added++;
+           valid_kp = true;
++          tri_tcid = tcido; tri_dist2 = T_0_1.translation().squaredNorm();
+         }
+       }
+ 
++      if (valid_kp && stereo_check_tol() > 0 && tcidl.cam_id == 0) {
++        // geometric check of the same-frame stereo observations against the temporal depth
++        const Keypoint<Scalar>& lm = lmdb.getLandmark(lm_id);
++        for (auto it = kp_obs.begin(); it != kp_obs.end();) {
++          const TimeCamId tcs = it->first;
++          if (tcs.frame_id != tcidl.frame_id || tcs.cam_id == 0) { ++it; continue; }
++          Vec4 q0, q1;
++          bool ok = calib.intrinsics[0].unproject(opt_flow_meas->observations.at(0).at(lm_id).translation().cast<Scalar>(), q0) &&
++                    calib.intrinsics[tcs.cam_id].unproject(it->second.pos, q1);
++          if (ok) {
++            SE3 T_0_s = calib.T_i_c[0].inverse() * calib.T_i_c[tcs.cam_id];
++            Vec4 ps = triangulate(q0.template head<3>(), q1.template head<3>(), T_0_s);
++            ok = ps.array().isFinite().all() && ps[3] > 0 &&
++                 std::abs(ps[3] - lm.inv_dist) <= Scalar(stereo_check_tol()) * std::max(lm.inv_dist, Scalar(0.05));
++          }
++          if (ok) { stereo_check_kept++; ++it; } else { stereo_check_dropped++; it = kp_obs.erase(it); }
++        }
++        if ((stereo_check_kept + stereo_check_dropped) % 500 == 0)
++          std::cerr << "stereo check: " << stereo_check_kept << " stereo observations kept, " << stereo_check_dropped << " dropped" << std::endl;
++      }
+       if (valid_kp) {
+         for (const auto& kv_obs : kp_obs) {
+           lmdb.addObservation(kv_obs.first, kv_obs.second);
+         }
++        if (kp_obs.size() < 2)
++          std::cerr << "landmark " << lm_id << " created with " << kp_obs.size() << " observation(s) at "
++                    << opt_flow_meas->t_ns << " from " << tri_tcid.frame_id << " cam " << tri_tcid.cam_id
++                    << " dist2 " << tri_dist2 << " min " << min_triang_distance2 << " inv_dist "
++                    << lmdb.getLandmark(lm_id).inv_dist << " prev_has_current "
++                    << prev_opt_flow_res.count(opt_flow_meas->t_ns) << " obs0 "
++                    << opt_flow_meas->observations[0].count(lm_id) << std::endl;
+       }
+     }
++    }
+ 
+     num_points_kf[opt_flow_meas->t_ns] = num_points_added;
+   } else {
+@@ -468,6 +865,18 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+   }
+ 
+   std::unordered_set<KeypointId> lost_landmaks;
++  // lamaria-slam (v3 appendix F20): BASALT_LOST_GRACE=N keeps a landmark that is not observed in this frame
++  // alive for N frames (upstream marginalises it at once), so a track the optical flow revives under its old
++  // id continues the same landmark
++  static const int lost_grace = [] {
++    const char* e = std::getenv("BASALT_LOST_GRACE");
++    const int v = (e && *e) ? std::atoi(e) : 0;
++    std::cerr << "BASALT_LOST_GRACE: " << v << std::endl;
++    return v;
++  }();
++  static long meas_frame = 0;
++  static std::unordered_map<KeypointId, long> last_seen;
++  meas_frame++;
+   if (config.vio_marg_lost_landmarks) {
+     for (const auto& kv : lmdb.getLandmarks()) {
+       bool connected = false;
+@@ -475,8 +884,14 @@ bool SqrtKeypointVioEstimator<Scalar_>::measure(
+         if (opt_flow_meas->observations[i].count(kv.first) > 0)
+           connected = true;
+       }
++      if (connected) last_seen[kv.first] = meas_frame;
+       if (!connected) {
+-        lost_landmaks.emplace(kv.first);
++        auto ls = last_seen.find(kv.first);
++        const long since = ls == last_seen.end() ? lost_grace + 1 : meas_frame - ls->second;
++        if (lost_grace <= 0 || since > lost_grace) {
++          lost_landmaks.emplace(kv.first);
++          last_seen.erase(kv.first);
++        }
+       }
+     }
+   }
+@@ -1014,6 +1429,44 @@ void SqrtKeypointVioEstimator<Scalar_>::optimize() {
+     std::cout << "=================================" << std::endl;
+   }
+ 
++  // lamaria-slam (v3 X05): a landmark left without observations (after masking, gating,
++  // filterOutliers or marginalisation) gives an empty landmark block whose QR dereferences null
++  // (segfault in makeHouseholder, seen on sequence_4_11 and 5_12). Drop such landmarks first.
++  {
++    // the landmark block only counts observations in frames of the current problem (frame_poses
++    // and frame_states) and asserts that the host frame is one of them; mirror that here
++    auto frame_active = [&](int64_t t) { return frame_poses.count(t) > 0 || frame_states.count(t) > 0; };
++    std::vector<KeypointId> empty_lms, single_lms;
++    static long single_total = 0;
++    for (const auto& kv_lm : lmdb.getLandmarks()) {
++      int n_active = 0;
++      for (const auto& kv_obs : kv_lm.second.obs)
++        if (frame_active(kv_obs.first.frame_id)) n_active++;
++      if (n_active == 0 || !frame_active(kv_lm.second.host_kf_id.frame_id)) empty_lms.push_back(kv_lm.first);
++      // a landmark with a single observation (X05: gdb showed obs = {host} only, inv_dist 5e-7)
++      // gives a 5-row block whose third Householder step runs on zero rows and segfaults
++      else if (kv_lm.second.obs.size() < 2) {
++        single_lms.push_back(kv_lm.first);
++        if (single_total < 20)
++          std::cerr << "landmark " << kv_lm.first << " has " << kv_lm.second.obs.size() << " observation(s): host "
++                    << kv_lm.second.host_kf_id.frame_id << " cam " << kv_lm.second.host_kf_id.cam_id
++                    << " inv_dist " << kv_lm.second.inv_dist << " current " << last_state_t_ns
++                    << (kv_lm.second.host_kf_id.frame_id == last_state_t_ns ? " (created this frame)" : "") << std::endl;
++        single_total++;
++      }
++    }
++    static long empty_total = 0;
++    for (KeypointId id : empty_lms) lmdb.removeLandmark(id);
++    for (KeypointId id : single_lms) lmdb.removeLandmark(id);
++    if (!empty_lms.empty()) {
++      empty_total += empty_lms.size();
++      if (empty_total <= 10 || empty_total % 100 == 0)
++        std::cerr << "removed " << empty_lms.size() << " landmark(s) without observations (total " << empty_total << ")" << std::endl;
++    }
++    if (!single_lms.empty() && (single_total <= 20 || single_total % 100 == 0))
++      std::cerr << "removed " << single_lms.size() << " single-observation landmark(s) (total " << single_total << ")" << std::endl;
++  }
++
+   if (opt_started || frame_states.size() > 4) {
+     opt_started = true;
+ 
+@@ -1431,6 +1884,79 @@ void SqrtKeypointVioEstimator<Scalar_>::optimize_and_marg(
+     const std::map<int64_t, int>& num_points_connected,
+     const std::unordered_set<KeypointId>& lost_landmaks) {
+   optimize();
++  // lamaria-slam (v3 F01): upstream leaves filterOutliers uncalled ("TODO"); enable it with
++  // BASALT_OUTLIER_PX (reprojection error threshold after the solve, 0 = off)
++  static const Scalar outlier_px = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_PX");
++    const double v = (e && *e) ? std::atof(e) : 0.0;
++    std::cerr << "BASALT_OUTLIER_PX: " << v << std::endl;
++    return Scalar(v);
++  }();
++  static const int outlier_min_obs = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_MIN_OBS");
++    return (e && *e) ? std::atoi(e) : 2;
++  }();
++  // lamaria-slam (v3 F08): BASALT_OUTLIER_WARMUP frames after initialisation without filtering;
++  // right after (re)initialisation the solve has not converged and a tight reprojection filter
++  // removes good observations and starves it (F07: every extra restart on R_04 was within 240
++  // frames of a start). One initialisation per process (the robust driver restarts the process).
++  static const long outlier_warmup = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_WARMUP");
++    const long v = (e && *e) ? std::atol(e) : 0;
++    std::cerr << "BASALT_OUTLIER_WARMUP: " << v << std::endl;
++    return v;
++  }();
++  static long frames_since_init = 0;
++  frames_since_init++;
++  // BASALT_OUTLIER_ADAPT=k: threshold max(BASALT_OUTLIER_PX, median + k * 1.4826 * MAD) of the current
++  // residuals, so a poorly converged solve (large spread) does not lose its good observations
++  static const Scalar outlier_adapt = [] {
++    const char* e = std::getenv("BASALT_OUTLIER_ADAPT");
++    const double v = (e && *e) ? std::atof(e) : 0.0;
++    std::cerr << "BASALT_OUTLIER_ADAPT: " << v << std::endl;
++    return Scalar(v);
++  }();
++  // X06 diagnostic: BASALT_RESID_DUMP=file writes per frame the residual distribution after the solve
++  // (count, median, p90, p99, count above 3 px, failed projections) before any filtering
++  static std::ofstream resid_dump = [] {
++    const char* e = std::getenv("BASALT_RESID_DUMP");
++    return (e && *e) ? std::ofstream(e) : std::ofstream();
++  }();
++  if (resid_dump.is_open()) {
++    Scalar err;
++    std::map<int, std::vector<std::pair<TimeCamId, Scalar>>> all;
++    this->computeError(err, &all, Scalar(0));
++    std::vector<Scalar> es; size_t failed = 0, cam1 = 0;
++    for (const auto& kv : all) for (const auto& kv2 : kv.second) { if (kv2.second >= 0) es.push_back(kv2.second); else failed++; if (kv2.first.cam_id == 1) cam1++; }
++    std::sort(es.begin(), es.end());
++    auto q = [&](double f) { return es.empty() ? Scalar(0) : es[std::min(es.size() - 1, size_t(f * es.size()))]; };
++    const size_t above3 = es.end() - std::lower_bound(es.begin(), es.end(), Scalar(3));
++    resid_dump << frames_since_init << ' ' << es.size() << ' ' << q(0.5) << ' ' << q(0.9) << ' ' << q(0.99) << ' '
++               << above3 << ' ' << failed << ' ' << lmdb.numLandmarks() << ' ' << cam1 << '\n';
++  }
++  static size_t adapt_removed_total = 0;
++  static Scalar adapt_thr_sum = 0;
++  if (outlier_px > 0 && frames_since_init > outlier_warmup) {
++    if (outlier_adapt > 0) {
++      size_t removed = 0;
++      const Scalar thr = this->filterOutliersAdaptive(outlier_px, outlier_adapt, outlier_min_obs, &removed);
++      adapt_removed_total += removed;
++      adapt_thr_sum += thr;
++      if (frames_since_init % 500 == 0)
++        std::cerr << "adaptive filter: mean threshold " << adapt_thr_sum / 500 << " px, " << adapt_removed_total
++                  << " observations removed so far" << std::endl, adapt_thr_sum = 0;
++    } else {
++      static const Scalar max_frac = [] { const char* e = std::getenv("BASALT_OUTLIER_MAX_FRAC"); return Scalar((e && *e) ? std::atof(e) : 0.0); }();
++      static const bool lm_rule = [] { const char* e = std::getenv("BASALT_OUTLIER_LM_RULE"); return e && *e && *e != '0'; }();
++      static bool v2_announced = false;
++      if (!v2_announced) { v2_announced = true; std::cerr << "BASALT_OUTLIER_MAX_FRAC: " << max_frac << " BASALT_OUTLIER_LM_RULE: " << lm_rule << std::endl; }
++      if (max_frac > 0 || lm_rule) this->filterOutliersV2(outlier_px, outlier_min_obs, max_frac, lm_rule);
++      else this->filterOutliers(outlier_px, outlier_min_obs);
++      if (frames_since_init % 500 == 0)
++        std::cerr << "outlier filter: " << this->filter_removed_landmarks << " landmarks and "
++                  << this->filter_removed_obs << " observations removed, " << this->filter_skipped_frames << " frames skipped so far" << std::endl;
++    }
++  }
+   marginalize(num_points_connected, lost_landmaks);
+ }
+ 
+diff --git a/vcpkg.json b/vcpkg.json
+index e36dd6b..5c7302a 100644
+--- a/vcpkg.json
++++ b/vcpkg.json
+@@ -1,12 +1,6 @@
+ {
+   "name": "basalt",
+   "version-string": "0.1.7",
+-  "overrides": [
+-    {
+-      "name": "realsense2",
+-      "version": "2.51.1"
+-    }
+-  ],
+   "dependencies": [
+     "boost-date-time",
+     "boost-filesystem",
+@@ -38,13 +32,6 @@
+         "png"
+       ]
+     },
+-    {
+-      "name": "realsense2",
+-      "features": [
+-        "rs-usb-backend",
+-        "tm2"
+-      ]
+-    },
+     "tbb",
+     "basalt-headers",
+     "opengv",

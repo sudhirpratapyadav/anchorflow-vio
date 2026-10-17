@@ -1,0 +1,40 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: librttopo
+Upstream-Contact: librttopo developers <librttopo-dev@lists.osgeo.org>
+Source: https://git.osgeo.org/gitea/rttopo/librttopo
+
+Files: *
+Copyright: 2004-2016, Sandro Santilli <strk@kbt.io>
+           2011-2015, Arrival 3D
+           2010-2015, Nicklas Avén <nicklas.aven@jordogskog.no>
+                2015, Daniel Baston <dbaston@gmail.com>
+          2011, 2014, Kashif Rasul <kashif.rasul@gmail.com>
+           2008-2012, Paul Ramsey <pramsey@cleverelephant.ca>
+           2010-2012, Oslandia
+           2009-2010, Olivier Courtin <olivier.courtin@oslandia.com>
+                2009, David Skea <David.Skea@gov.bc.ca>
+           2007-2008, Mark Cave-Ayland
+           2001-2006, Refractions Research Inc
+                2006, Corporacion Autonoma Regional de Santander
+                2002, Thamer Alharbash
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2016, Bas Couwenberg <sebastic@debian.org>
+License: GPL-2+
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the full text of the GNU General Public License
+ version 2 can be found in the file
+ `/usr/share/common-licenses/GPL-2'.
+

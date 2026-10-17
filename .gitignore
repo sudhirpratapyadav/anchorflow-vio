@@ -1,0 +1,15 @@
+.venv*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+build-tools/
+runtime/
+data/
+outputs/
+third_party/
+upstream-basalt/
+*.zip
+*.so
+*.o
+core

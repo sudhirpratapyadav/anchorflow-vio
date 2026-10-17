@@ -1,0 +1,1421 @@
+{
+  "scope": "Actual ldd closure for source-built runtime on validation host; OS libraries are not redistributed by this source release.",
+  "libraries": [
+    {
+      "library": "libEGL.so.1",
+      "packages": [
+        "libegl1:amd64"
+      ]
+    },
+    {
+      "library": "libGLdispatch.so.0",
+      "packages": [
+        "libglvnd0:amd64"
+      ]
+    },
+    {
+      "library": "libHalf-2_5.so.25",
+      "packages": [
+        "libilmbase25:amd64"
+      ]
+    },
+    {
+      "library": "libIex-2_5.so.25",
+      "packages": [
+        "libilmbase25:amd64"
+      ]
+    },
+    {
+      "library": "libIlmImf-2_5.so.25",
+      "packages": [
+        "libopenexr25:amd64"
+      ]
+    },
+    {
+      "library": "libIlmThread-2_5.so.25",
+      "packages": [
+        "libilmbase25:amd64"
+      ]
+    },
+    {
+      "library": "libImath-2_5.so.25",
+      "packages": [
+        "libilmbase25:amd64"
+      ]
+    },
+    {
+      "library": "libX11.so.6",
+      "packages": [
+        "libx11-6:amd64"
+      ]
+    },
+    {
+      "library": "libXau.so.6",
+      "packages": [
+        "libxau6:amd64"
+      ]
+    },
+    {
+      "library": "libXdmcp.so.6",
+      "packages": [
+        "libxdmcp6:amd64"
+      ]
+    },
+    {
+      "library": "libaec.so.0",
+      "packages": [
+        "libaec0:amd64"
+      ]
+    },
+    {
+      "library": "libaom.so.3",
+      "packages": [
+        "libaom3:amd64"
+      ]
+    },
+    {
+      "library": "libarmadillo.so.10",
+      "packages": [
+        "libarmadillo10"
+      ]
+    },
+    {
+      "library": "libarpack.so.2",
+      "packages": [
+        "libarpack2:amd64"
+      ]
+    },
+    {
+      "library": "libbasalt.so",
+      "source": "this build"
+    },
+    {
+      "library": "libblas.so.3",
+      "packages": [
+        "libblas3:amd64"
+      ]
+    },
+    {
+      "library": "libblosc.so.1",
+      "packages": [
+        "libblosc1:amd64"
+      ]
+    },
+    {
+      "library": "libbrotlicommon.so.1",
+      "packages": [
+        "libbrotli1:amd64"
+      ]
+    },
+    {
+      "library": "libbrotlidec.so.1",
+      "packages": [
+        "libbrotli1:amd64"
+      ]
+    },
+    {
+      "library": "libbsd.so.0",
+      "packages": [
+        "libbsd0:amd64"
+      ]
+    },
+    {
+      "library": "libbz2.so.1.0",
+      "packages": [
+        "libbz2-1.0:amd64"
+      ]
+    },
+    {
+      "library": "libc.so.6",
+      "packages": [
+        "libc6:amd64"
+      ]
+    },
+    {
+      "library": "libcfitsio.so.9",
+      "packages": [
+        "libcfitsio9:amd64"
+      ]
+    },
+    {
+      "library": "libcharls.so.2",
+      "packages": [
+        "libcharls2:amd64"
+      ]
+    },
+    {
+      "library": "libcom_err.so.2",
+      "packages": [
+        "libcom-err2:amd64"
+      ]
+    },
+    {
+      "library": "libcrypto.so.3",
+      "packages": [
+        "libssl3:amd64"
+      ]
+    },
+    {
+      "library": "libcurl-gnutls.so.4",
+      "packages": [
+        "libcurl3-gnutls:amd64"
+      ]
+    },
+    {
+      "library": "libcurl.so.4",
+      "packages": [
+        "libcurl4:amd64"
+      ]
+    },
+    {
+      "library": "libdav1d.so.5",
+      "packages": [
+        "libdav1d5:amd64"
+      ]
+    },
+    {
+      "library": "libde265.so.0",
+      "packages": [
+        "libde265-0:amd64"
+      ]
+    },
+    {
+      "library": "libdeflate.so.0",
+      "packages": [
+        "libdeflate0:amd64"
+      ]
+    },
+    {
+      "library": "libdfalt.so.0",
+      "packages": [
+        "libhdf4-0-alt"
+      ]
+    },
+    {
+      "library": "libdl.so.2",
+      "packages": [
+        "libc6:amd64"
+      ]
+    },
+    {
+      "library": "libexpat.so.1",
+      "packages": [
+        "libexpat1:amd64"
+      ]
+    },
+    {
+      "library": "libffi.so.8",
+      "packages": [
+        "libffi8:amd64"
+      ]
+    },
+    {
+      "library": "libfontconfig.so.1",
+      "packages": [
+        "libfontconfig1:amd64"
+      ]
+    },
+    {
+      "library": "libfreetype.so.6",
+      "packages": [
+        "libfreetype6:amd64"
+      ]
+    },
+    {
+      "library": "libfreexl.so.1",
+      "packages": [
+        "libfreexl1:amd64"
+      ]
+    },
+    {
+      "library": "libfyba.so.0",
+      "packages": [
+        "libfyba0:amd64"
+      ]
+    },
+    {
+      "library": "libfygm.so.0",
+      "packages": [
+        "libfyba0:amd64"
+      ]
+    },
+    {
+      "library": "libfyut.so.0",
+      "packages": [
+        "libfyba0:amd64"
+      ]
+    },
+    {
+      "library": "libgcc_s.so.1",
+      "packages": [
+        "libgcc-s1:amd64"
+      ]
+    },
+    {
+      "library": "libgdal.so.30",
+      "packages": [
+        "libgdal30"
+      ]
+    },
+    {
+      "library": "libgdcmCommon.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmDICT.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmDSED.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmIOD.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmMSFF.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmjpeg12.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmjpeg16.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgdcmjpeg8.so.3.0",
+      "packages": [
+        "libgdcm3.0:amd64"
+      ]
+    },
+    {
+      "library": "libgeos.so.3.10.2",
+      "packages": [
+        "libgeos3.10.2:amd64"
+      ]
+    },
+    {
+      "library": "libgeos_c.so.1",
+      "packages": [
+        "libgeos-c1v5:amd64"
+      ]
+    },
+    {
+      "library": "libgeotiff.so.5",
+      "packages": [
+        "libgeotiff5:amd64"
+      ]
+    },
+    {
+      "library": "libgfortran.so.5",
+      "packages": [
+        "libgfortran5:amd64"
+      ]
+    },
+    {
+      "library": "libgif.so.7",
+      "packages": [
+        "libgif7:amd64"
+      ]
+    },
+    {
+      "library": "libgmp.so.10",
+      "packages": [
+        "libgmp10:amd64"
+      ]
+    },
+    {
+      "library": "libgnutls.so.30",
+      "packages": [
+        "libgnutls30:amd64"
+      ]
+    },
+    {
+      "library": "libgssapi_krb5.so.2",
+      "packages": [
+        "libgssapi-krb5-2:amd64"
+      ]
+    },
+    {
+      "library": "libhdf5_serial.so.103",
+      "packages": [
+        "libhdf5-103-1:amd64"
+      ]
+    },
+    {
+      "library": "libhdf5_serial_hl.so.100",
+      "packages": [
+        "libhdf5-hl-100:amd64"
+      ]
+    },
+    {
+      "library": "libheif.so.1",
+      "packages": [
+        "libheif1:amd64"
+      ]
+    },
+    {
+      "library": "libhogweed.so.6",
+      "packages": [
+        "libhogweed6:amd64"
+      ]
+    },
+    {
+      "library": "libicudata.so.70",
+      "packages": [
+        "libicu70:amd64"
+      ]
+    },
+    {
+      "library": "libicuuc.so.70",
+      "packages": [
+        "libicu70:amd64"
+      ]
+    },
+    {
+      "library": "libidn2.so.0",
+      "packages": [
+        "libidn2-0:amd64"
+      ]
+    },
+    {
+      "library": "libjbig.so.0",
+      "packages": [
+        "libjbig0:amd64"
+      ]
+    },
+    {
+      "library": "libjpeg.so.8",
+      "packages": [
+        "libjpeg-turbo8:amd64"
+      ]
+    },
+    {
+      "library": "libjson-c.so.5",
+      "packages": [
+        "libjson-c5:amd64"
+      ]
+    },
+    {
+      "library": "libk5crypto.so.3",
+      "packages": [
+        "libk5crypto3:amd64"
+      ]
+    },
+    {
+      "library": "libkeyutils.so.1",
+      "packages": [
+        "libkeyutils1:amd64"
+      ]
+    },
+    {
+      "library": "libkmlbase.so.1",
+      "packages": [
+        "libkmlbase1:amd64"
+      ]
+    },
+    {
+      "library": "libkmldom.so.1",
+      "packages": [
+        "libkmldom1:amd64"
+      ]
+    },
+    {
+      "library": "libkmlengine.so.1",
+      "packages": [
+        "libkmlengine1:amd64"
+      ]
+    },
+    {
+      "library": "libkrb5.so.3",
+      "packages": [
+        "libkrb5-3:amd64"
+      ]
+    },
+    {
+      "library": "libkrb5support.so.0",
+      "packages": [
+        "libkrb5support0:amd64"
+      ]
+    },
+    {
+      "library": "liblapack.so.3",
+      "packages": [
+        "liblapack3:amd64"
+      ]
+    },
+    {
+      "library": "liblber-2.5.so.0",
+      "packages": [
+        "libldap-2.5-0:amd64"
+      ]
+    },
+    {
+      "library": "liblcms2.so.2",
+      "packages": [
+        "liblcms2-2:amd64"
+      ]
+    },
+    {
+      "library": "libldap-2.5.so.0",
+      "packages": [
+        "libldap-2.5-0:amd64"
+      ]
+    },
+    {
+      "library": "libltdl.so.7",
+      "packages": [
+        "libltdl7:amd64"
+      ]
+    },
+    {
+      "library": "liblz4.so.1",
+      "packages": [
+        "liblz4-1:amd64"
+      ]
+    },
+    {
+      "library": "liblzma.so.5",
+      "packages": [
+        "liblzma5:amd64"
+      ]
+    },
+    {
+      "library": "libm.so.6",
+      "packages": [
+        "libc6:amd64"
+      ]
+    },
+    {
+      "library": "libmd.so.0",
+      "packages": [
+        "libmd0:amd64"
+      ]
+    },
+    {
+      "library": "libmfhdfalt.so.0",
+      "packages": [
+        "libhdf4-0-alt"
+      ]
+    },
+    {
+      "library": "libminizip.so.1",
+      "packages": [
+        "libminizip1:amd64"
+      ]
+    },
+    {
+      "library": "libmysqlclient.so.21",
+      "packages": [
+        "libmysqlclient21:amd64"
+      ]
+    },
+    {
+      "library": "libnetcdf.so.19",
+      "packages": [
+        "libnetcdf19:amd64"
+      ]
+    },
+    {
+      "library": "libnettle.so.8",
+      "packages": [
+        "libnettle8:amd64"
+      ]
+    },
+    {
+      "library": "libnghttp2.so.14",
+      "packages": [
+        "libnghttp2-14:amd64"
+      ]
+    },
+    {
+      "library": "libnspr4.so",
+      "packages": [
+        "libnspr4:amd64"
+      ]
+    },
+    {
+      "library": "libnss3.so",
+      "packages": [
+        "libnss3:amd64"
+      ]
+    },
+    {
+      "library": "libnssutil3.so",
+      "packages": [
+        "libnss3:amd64"
+      ]
+    },
+    {
+      "library": "libnuma.so.1",
+      "packages": [
+        "libnuma1:amd64"
+      ]
+    },
+    {
+      "library": "libodbc.so.2",
+      "packages": [
+        "libodbc2:amd64"
+      ]
+    },
+    {
+      "library": "libodbcinst.so.2",
+      "packages": [
+        "libodbcinst2:amd64"
+      ]
+    },
+    {
+      "library": "libogdi.so.4.1",
+      "packages": [
+        "libogdi4.1"
+      ]
+    },
+    {
+      "library": "libopencv_core.so.4.5d",
+      "packages": [
+        "libopencv-core4.5d:amd64"
+      ]
+    },
+    {
+      "library": "libopencv_imgcodecs.so.4.5d",
+      "packages": [
+        "libopencv-imgcodecs4.5d:amd64"
+      ]
+    },
+    {
+      "library": "libopencv_imgproc.so.4.5d",
+      "packages": [
+        "libopencv-imgproc4.5d:amd64"
+      ]
+    },
+    {
+      "library": "libopenjp2.so.7",
+      "packages": [
+        "libopenjp2-7:amd64"
+      ]
+    },
+    {
+      "library": "libp11-kit.so.0",
+      "packages": [
+        "libp11-kit0:amd64"
+      ]
+    },
+    {
+      "library": "libpcre2-8.so.0",
+      "packages": [
+        "libpcre2-8-0:amd64"
+      ]
+    },
+    {
+      "library": "libplc4.so",
+      "packages": [
+        "libnspr4:amd64"
+      ]
+    },
+    {
+      "library": "libplds4.so",
+      "packages": [
+        "libnspr4:amd64"
+      ]
+    },
+    {
+      "library": "libpng16.so.16",
+      "packages": [
+        "libpng16-16:amd64"
+      ]
+    },
+    {
+      "library": "libpoppler.so.118",
+      "packages": [
+        "libpoppler118:amd64"
+      ]
+    },
+    {
+      "library": "libpq.so.5",
+      "packages": [
+        "libpq5:amd64"
+      ]
+    },
+    {
+      "library": "libproj.so.22",
+      "packages": [
+        "libproj22:amd64"
+      ]
+    },
+    {
+      "library": "libpsl.so.5",
+      "packages": [
+        "libpsl5:amd64"
+      ]
+    },
+    {
+      "library": "libqhull_r.so.8.0",
+      "packages": [
+        "libqhull-r8.0:amd64"
+      ]
+    },
+    {
+      "library": "libquadmath.so.0",
+      "packages": [
+        "libquadmath0:amd64"
+      ]
+    },
+    {
+      "library": "libresolv.so.2",
+      "packages": [
+        "libc6:amd64"
+      ]
+    },
+    {
+      "library": "librtmp.so.1",
+      "packages": [
+        "librtmp1:amd64"
+      ]
+    },
+    {
+      "library": "librttopo.so.1",
+      "packages": [
+        "librttopo1:amd64"
+      ]
+    },
+    {
+      "library": "libsasl2.so.2",
+      "packages": [
+        "libsasl2-2:amd64"
+      ]
+    },
+    {
+      "library": "libsmime3.so",
+      "packages": [
+        "libnss3:amd64"
+      ]
+    },
+    {
+      "library": "libsnappy.so.1",
+      "packages": [
+        "libsnappy1v5:amd64"
+      ]
+    },
+    {
+      "library": "libspatialite.so.7",
+      "packages": [
+        "libspatialite7:amd64"
+      ]
+    },
+    {
+      "library": "libsqlite3.so.0",
+      "packages": [
+        "libsqlite3-0:amd64"
+      ]
+    },
+    {
+      "library": "libssh.so.4",
+      "packages": [
+        "libssh-4:amd64"
+      ]
+    },
+    {
+      "library": "libssl.so.3",
+      "packages": [
+        "libssl3:amd64"
+      ]
+    },
+    {
+      "library": "libstdc++.so.6",
+      "packages": [
+        "libstdc++6:amd64"
+      ]
+    },
+    {
+      "library": "libsuperlu.so.5",
+      "packages": [
+        "libsuperlu5:amd64"
+      ]
+    },
+    {
+      "library": "libsz.so.2",
+      "packages": [
+        "libsz2:amd64"
+      ]
+    },
+    {
+      "library": "libtasn1.so.6",
+      "packages": [
+        "libtasn1-6:amd64"
+      ]
+    },
+    {
+      "library": "libtbb.so.2",
+      "packages": [
+        "libtbb2:amd64"
+      ]
+    },
+    {
+      "library": "libtiff.so.5",
+      "packages": [
+        "libtiff5:amd64"
+      ]
+    },
+    {
+      "library": "libtirpc.so.3",
+      "packages": [
+        "libtirpc3:amd64"
+      ]
+    },
+    {
+      "library": "libunistring.so.2",
+      "packages": [
+        "libunistring2:amd64"
+      ]
+    },
+    {
+      "library": "liburiparser.so.1",
+      "packages": [
+        "liburiparser1:amd64"
+      ]
+    },
+    {
+      "library": "libuuid.so.1",
+      "packages": [
+        "libuuid1:amd64"
+      ]
+    },
+    {
+      "library": "libwebp.so.7",
+      "packages": [
+        "libwebp7:amd64"
+      ]
+    },
+    {
+      "library": "libx265.so.199",
+      "packages": [
+        "libx265-199:amd64"
+      ]
+    },
+    {
+      "library": "libxcb.so.1",
+      "packages": [
+        "libxcb1:amd64"
+      ]
+    },
+    {
+      "library": "libxerces-c-3.2.so",
+      "packages": [
+        "libxerces-c3.2:amd64"
+      ]
+    },
+    {
+      "library": "libxml2.so.2",
+      "packages": [
+        "libxml2:amd64"
+      ]
+    },
+    {
+      "library": "libz.so.1",
+      "packages": [
+        "zlib1g:amd64"
+      ]
+    },
+    {
+      "library": "libzstd.so.1",
+      "packages": [
+        "libzstd1:amd64"
+      ]
+    }
+  ],
+  "packages": {
+    "libegl1:amd64": {
+      "version": "1.4.0-1",
+      "notice": "libegl1_amd64.txt",
+      "sha256": "cf246da9d8979f9be80e5b9c3ce0010c09786f11a55637ff3d09f1a36d269b25"
+    },
+    "libglvnd0:amd64": {
+      "version": "1.4.0-1",
+      "notice": "libglvnd0_amd64.txt",
+      "sha256": "cf246da9d8979f9be80e5b9c3ce0010c09786f11a55637ff3d09f1a36d269b25"
+    },
+    "libilmbase25:amd64": {
+      "version": "2.5.7-2",
+      "notice": "libilmbase25_amd64.txt",
+      "sha256": "1d91992a108a75cea85f9dd546057a92d4527596ac45c5a892b6b858f8ede8c4"
+    },
+    "libopenexr25:amd64": {
+      "version": "2.5.7-1",
+      "notice": "libopenexr25_amd64.txt",
+      "sha256": "e76f301b1bae2ffcc959b23dc7539a7a7b9e5acae3ac1aa717f2a696716f646e"
+    },
+    "libx11-6:amd64": {
+      "version": "2:1.7.5-1ubuntu0.4",
+      "notice": "libx11-6_amd64.txt",
+      "sha256": "0b380a7fd5b2228f26e9585e56f14812efd3350f3df307507d2bc055dfd8de3e"
+    },
+    "libxau6:amd64": {
+      "version": "1:1.0.9-1build5",
+      "notice": "libxau6_amd64.txt",
+      "sha256": "118dd263a7b91c8f21c489f949bf13281dff9e766deea92b829dac4dce66601a"
+    },
+    "libxdmcp6:amd64": {
+      "version": "1:1.1.3-0ubuntu5",
+      "notice": "libxdmcp6_amd64.txt",
+      "sha256": "1bcbb50f8603fe8b86d330bfa460b772ea04fbd3c70e4499f0768b5340b9fd6e"
+    },
+    "libaec0:amd64": {
+      "version": "1.0.6-1",
+      "notice": "libaec0_amd64.txt",
+      "sha256": "d4db5de948df5daca9cffd24de298cda96616b0b9c66a967d0b20be664f0ebda"
+    },
+    "libaom3:amd64": {
+      "version": "3.3.0-1ubuntu0.1",
+      "notice": "libaom3_amd64.txt",
+      "sha256": "199f2132cacaaf5113a9c917d9bb43f6eb8ee802b8b0e63240d06bffafa3a05c"
+    },
+    "libarmadillo10": {
+      "version": "1:10.8.2+dfsg-1",
+      "notice": "libarmadillo10.txt",
+      "sha256": "27e33857725a4581e2207b6dea0b27f3d9790cdc2767cc4c4a40cd5b42d3465b"
+    },
+    "libarpack2:amd64": {
+      "version": "3.8.0-1",
+      "notice": "libarpack2_amd64.txt",
+      "sha256": "159ff620afea46eca7e58209fc9ac6b529200df45c1b3dc2359cb1b715f835d8"
+    },
+    "libblas3:amd64": {
+      "version": "3.10.0-2ubuntu1",
+      "notice": "libblas3_amd64.txt",
+      "sha256": "cea124797a83f772af14449ea95a28bb192d2bc4861b8af347101a3592476089"
+    },
+    "libblosc1:amd64": {
+      "version": "1.21.1+ds2-2",
+      "notice": "libblosc1_amd64.txt",
+      "sha256": "e6d147ee78dd00e300bdf7cab7970efda4d0e199de09b05709ff6bf68df5f3eb"
+    },
+    "libbrotli1:amd64": {
+      "version": "1.0.9-2build6",
+      "notice": "libbrotli1_amd64.txt",
+      "sha256": "24a64e5bb83d0960d1835696a1e23c0896ad6055b0ca47c66ab0eb9a766324b1"
+    },
+    "libbsd0:amd64": {
+      "version": "0.11.5-1",
+      "notice": "libbsd0_amd64.txt",
+      "sha256": "3761714adb9c45fa588b77b372d6e75dcc9e6822cc2d6baa712007241aec714e"
+    },
+    "libbz2-1.0:amd64": {
+      "version": "1.0.8-5ubuntu0.1",
+      "notice": "libbz2-1.0_amd64.txt",
+      "sha256": "832ed535ff3c3d025a8d2348eb1b697b89addcf2eaadbc17650262040b9145e2"
+    },
+    "libc6:amd64": {
+      "version": "2.35-0ubuntu3.15",
+      "notice": "libc6_amd64.txt",
+      "sha256": "d3c95b56fa33e28b57860580f0baf4e4f4de2a268a2b80f1d031a5191bade265"
+    },
+    "libcfitsio9:amd64": {
+      "version": "4.0.0-1",
+      "notice": "libcfitsio9_amd64.txt",
+      "sha256": "53f9aee79bcd00cf7517e13d0f5500cb49b8e593b8f6913a38460cd1e5dc1d6e"
+    },
+    "libcharls2:amd64": {
+      "version": "2.3.4-1",
+      "notice": "libcharls2_amd64.txt",
+      "sha256": "5dff0985c79ec7a0c1cf7af81af2041ed2d63ddbc77820b481a0c8007cfa12e7"
+    },
+    "libcom-err2:amd64": {
+      "version": "1.46.5-2ubuntu1.2",
+      "notice": "libcom-err2_amd64.txt",
+      "sha256": "9e3a4384b6d8d2358d44103f62bcd948328b3f8a63a1a6baa66abeb43302d581"
+    },
+    "libssl3:amd64": {
+      "version": "3.0.2-0ubuntu1.30",
+      "notice": "libssl3_amd64.txt",
+      "sha256": "6a7da622fe0637a334d2a8fc470852d2ffb77d9a2b2f930f854e32a41ad6ef35"
+    },
+    "libcurl3-gnutls:amd64": {
+      "version": "7.81.0-1ubuntu1.30",
+      "notice": "libcurl3-gnutls_amd64.txt",
+      "sha256": "d8fef27baefaf797112424a88959cfc1122b884cdfe215e84e4c07df49a35189"
+    },
+    "libcurl4:amd64": {
+      "version": "7.81.0-1ubuntu1.30",
+      "notice": "libcurl4_amd64.txt",
+      "sha256": "d8fef27baefaf797112424a88959cfc1122b884cdfe215e84e4c07df49a35189"
+    },
+    "libdav1d5:amd64": {
+      "version": "0.9.2-1",
+      "notice": "libdav1d5_amd64.txt",
+      "sha256": "9b82ed3cc5a80ebde9e7f52a19a2fe0af33b8ba2d5ce2d5a293fe294b28a236c"
+    },
+    "libde265-0:amd64": {
+      "version": "1.0.8-1ubuntu0.3",
+      "notice": "libde265-0_amd64.txt",
+      "sha256": "ae80d24c2f303a838b9ebd380f7fd8e7669dee85ef7f4dcf93034122c8321185"
+    },
+    "libdeflate0:amd64": {
+      "version": "1.10-2",
+      "notice": "libdeflate0_amd64.txt",
+      "sha256": "06b1e73b344fa5ad4c24a79547dd787623f3d118d681d6c9bd3fdc10a7070381"
+    },
+    "libhdf4-0-alt": {
+      "version": "4.2.15-4",
+      "notice": "libhdf4-0-alt.txt",
+      "sha256": "87c4f9c83b7537e0c803d723852e8e084dd49ca00f95c7e58baf4f657be7a7fc"
+    },
+    "libexpat1:amd64": {
+      "version": "2.4.7-1ubuntu0.9",
+      "notice": "libexpat1_amd64.txt",
+      "sha256": "60919fe1a156395ff14511bb6ff79756c50ade2fff59ac60c9bae1d8a7fe6292"
+    },
+    "libffi8:amd64": {
+      "version": "3.4.2-4",
+      "notice": "libffi8_amd64.txt",
+      "sha256": "7258c8acc378030d8dbe1fcdf394e915769fa31dcbaf3d2991d9a79891f3bcdc"
+    },
+    "libfontconfig1:amd64": {
+      "version": "2.13.1-4.2ubuntu5",
+      "notice": "libfontconfig1_amd64.txt",
+      "sha256": "b215a61cdd3e62b5b17cc28b1852c78acb3dd38be0fb30706f7efc050dba91db"
+    },
+    "libfreetype6:amd64": {
+      "version": "2.11.1+dfsg-1ubuntu0.4",
+      "notice": "libfreetype6_amd64.txt",
+      "sha256": "992b869abf2c114288dafb51c37f19c0afc3455477b9d589371d45ad214a8b07"
+    },
+    "libfreexl1:amd64": {
+      "version": "1.0.6-1",
+      "notice": "libfreexl1_amd64.txt",
+      "sha256": "139350d43c06950f3746b78d60891508a0181fbbaad1517ca413f967452f36b2"
+    },
+    "libfyba0:amd64": {
+      "version": "4.1.1-7",
+      "notice": "libfyba0_amd64.txt",
+      "sha256": "ae36a5e8e4924ceda8de7d9eb7a7ce1e4e09bd3526b01e9d55fd8fcfb7aaea16"
+    },
+    "libgcc-s1:amd64": {
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "notice": "libgcc-s1_amd64.txt",
+      "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+    },
+    "libgdal30": {
+      "version": "3.4.1+dfsg-1build4",
+      "notice": "libgdal30.txt",
+      "sha256": "c60d2408e27baf347ca46aee47ed1e5928a68fd425b9813f55fd9df0376110ba"
+    },
+    "libgdcm3.0:amd64": {
+      "version": "3.0.10-1build2",
+      "notice": "libgdcm3.0_amd64.txt",
+      "sha256": "372ab195ba792845ff8153f32348f42a4f7e37da10e755cf3ef93a8e838dbdf4"
+    },
+    "libgeos3.10.2:amd64": {
+      "version": "3.10.2-1",
+      "notice": "libgeos3.10.2_amd64.txt",
+      "sha256": "7a0243804c25a940657dbb50415cf9f848e94fecf1a3a810d5b9b8249537dd65"
+    },
+    "libgeos-c1v5:amd64": {
+      "version": "3.10.2-1",
+      "notice": "libgeos-c1v5_amd64.txt",
+      "sha256": "7a0243804c25a940657dbb50415cf9f848e94fecf1a3a810d5b9b8249537dd65"
+    },
+    "libgeotiff5:amd64": {
+      "version": "1.7.0-2build1",
+      "notice": "libgeotiff5_amd64.txt",
+      "sha256": "32638ca3db5169431bb26f4ddf6464e2b6c5d59d8ab16f3aa8f1ce04170c5ac0"
+    },
+    "libgfortran5:amd64": {
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "notice": "libgfortran5_amd64.txt",
+      "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+    },
+    "libgif7:amd64": {
+      "version": "5.1.9-2ubuntu0.3",
+      "notice": "libgif7_amd64.txt",
+      "sha256": "479e834b17e61f0afe5f4a62e1794a4543208dea955820399e2d9589a1938fb0"
+    },
+    "libgmp10:amd64": {
+      "version": "2:6.2.1+dfsg-3ubuntu1",
+      "notice": "libgmp10_amd64.txt",
+      "sha256": "f73f781beb9f85b3f921f9bf540fc89d6eff9e20689ef9323ce510d077a30878"
+    },
+    "libgnutls30:amd64": {
+      "version": "3.7.3-4ubuntu1.9",
+      "notice": "libgnutls30_amd64.txt",
+      "sha256": "c2a08ee31ea9f0a4fc0f4d590c5481f5b7fc2d325b04ae74c719fa7894dcbdd7"
+    },
+    "libgssapi-krb5-2:amd64": {
+      "version": "1.19.2-2ubuntu0.8",
+      "notice": "libgssapi-krb5-2_amd64.txt",
+      "sha256": "4a2d321ab57260e8de4b67bde8cff76c07d28be69c2d8b22dfc2bfa42f5c41b9"
+    },
+    "libhdf5-103-1:amd64": {
+      "version": "1.10.7+repack-4ubuntu2",
+      "notice": "libhdf5-103-1_amd64.txt",
+      "sha256": "e818940033d22c7f70e8adb7e899481b03aae939b81cec07d8ccfebde0affcc9"
+    },
+    "libhdf5-hl-100:amd64": {
+      "version": "1.10.7+repack-4ubuntu2",
+      "notice": "libhdf5-hl-100_amd64.txt",
+      "sha256": "e818940033d22c7f70e8adb7e899481b03aae939b81cec07d8ccfebde0affcc9"
+    },
+    "libheif1:amd64": {
+      "version": "1.12.0-2build1",
+      "notice": "libheif1_amd64.txt",
+      "sha256": "578d9edcdb9297025b359d30084b8862b8085640c6b33a681f70526da1165060"
+    },
+    "libhogweed6:amd64": {
+      "version": "3.7.3-1build2",
+      "notice": "libhogweed6_amd64.txt",
+      "sha256": "d8b51ce04d337e49df2f6258a5c8558f3080ff2cf629deb9f07c0361d1757e7b"
+    },
+    "libicu70:amd64": {
+      "version": "70.1-2",
+      "notice": "libicu70_amd64.txt",
+      "sha256": "170fd65a4a836530290d4b3f7572cafcf1c4d66e7357ae42d76861bbbecd4767"
+    },
+    "libidn2-0:amd64": {
+      "version": "2.3.2-2build1",
+      "notice": "libidn2-0_amd64.txt",
+      "sha256": "41702469f28e8ff406345e3d1dd0c741f11bdfca319264f67036efd6aaa79e4b"
+    },
+    "libjbig0:amd64": {
+      "version": "2.1-3.1ubuntu0.22.04.1",
+      "notice": "libjbig0_amd64.txt",
+      "sha256": "89ab20c324a191652e94598f2144a65442faed4f14f77bbd10516130ee20f05a"
+    },
+    "libjpeg-turbo8:amd64": {
+      "version": "2.1.2-0ubuntu1",
+      "notice": "libjpeg-turbo8_amd64.txt",
+      "sha256": "193468d9eb043a180f6f9e3386f7205104908dcb8525ad39c8236990dfd452ef"
+    },
+    "libjson-c5:amd64": {
+      "version": "0.15-3~ubuntu1.22.04.2",
+      "notice": "libjson-c5_amd64.txt",
+      "sha256": "28b7d201a7af411c0517ae4f2e50084e86c4850e409b1a5e69539ba78af87d7f"
+    },
+    "libk5crypto3:amd64": {
+      "version": "1.19.2-2ubuntu0.8",
+      "notice": "libk5crypto3_amd64.txt",
+      "sha256": "4a2d321ab57260e8de4b67bde8cff76c07d28be69c2d8b22dfc2bfa42f5c41b9"
+    },
+    "libkeyutils1:amd64": {
+      "version": "1.6.1-2ubuntu3",
+      "notice": "libkeyutils1_amd64.txt",
+      "sha256": "6ab5c541723d8211cab7ebc1643d53aa51c4863c1c838e4625d797ece9472ee8"
+    },
+    "libkmlbase1:amd64": {
+      "version": "1.3.0-9",
+      "notice": "libkmlbase1_amd64.txt",
+      "sha256": "2ae76adeb402322425ee0a57d3728a46e606df0b769bba5be61d88016f37c92f"
+    },
+    "libkmldom1:amd64": {
+      "version": "1.3.0-9",
+      "notice": "libkmldom1_amd64.txt",
+      "sha256": "2ae76adeb402322425ee0a57d3728a46e606df0b769bba5be61d88016f37c92f"
+    },
+    "libkmlengine1:amd64": {
+      "version": "1.3.0-9",
+      "notice": "libkmlengine1_amd64.txt",
+      "sha256": "2ae76adeb402322425ee0a57d3728a46e606df0b769bba5be61d88016f37c92f"
+    },
+    "libkrb5-3:amd64": {
+      "version": "1.19.2-2ubuntu0.8",
+      "notice": "libkrb5-3_amd64.txt",
+      "sha256": "4a2d321ab57260e8de4b67bde8cff76c07d28be69c2d8b22dfc2bfa42f5c41b9"
+    },
+    "libkrb5support0:amd64": {
+      "version": "1.19.2-2ubuntu0.8",
+      "notice": "libkrb5support0_amd64.txt",
+      "sha256": "4a2d321ab57260e8de4b67bde8cff76c07d28be69c2d8b22dfc2bfa42f5c41b9"
+    },
+    "liblapack3:amd64": {
+      "version": "3.10.0-2ubuntu1",
+      "notice": "liblapack3_amd64.txt",
+      "sha256": "cea124797a83f772af14449ea95a28bb192d2bc4861b8af347101a3592476089"
+    },
+    "libldap-2.5-0:amd64": {
+      "version": "2.5.18+dfsg-0ubuntu0.22.04.2",
+      "notice": "libldap-2.5-0_amd64.txt",
+      "sha256": "0690f1ee382f98e95b446743db55395641d5e258de65939e9cb1c660d67a43a8"
+    },
+    "liblcms2-2:amd64": {
+      "version": "2.12~rc1-2ubuntu0.1",
+      "notice": "liblcms2-2_amd64.txt",
+      "sha256": "2770aa1078b7089a4ea61b6cc5417f7f08740944b23d4374af46d6f899c9da77"
+    },
+    "libltdl7:amd64": {
+      "version": "2.4.6-15build2",
+      "notice": "libltdl7_amd64.txt",
+      "sha256": "4a16465252284e224c025f3186098ef8956f65902e13228262c5a157221cdbe6"
+    },
+    "liblz4-1:amd64": {
+      "version": "1.9.3-2build2",
+      "notice": "liblz4-1_amd64.txt",
+      "sha256": "a82c5d50439c6d9f32b874dbc75ae5292ba5a3e50318bed80e82a8f5254689ca"
+    },
+    "liblzma5:amd64": {
+      "version": "5.2.5-2ubuntu1.1",
+      "notice": "liblzma5_amd64.txt",
+      "sha256": "a2dc8fac0f496e1c58aff67018cf0c6b88336316afa5642f9335b71642e28aa8"
+    },
+    "libmd0:amd64": {
+      "version": "1.0.4-1build1",
+      "notice": "libmd0_amd64.txt",
+      "sha256": "4365ef6255ad553fce69dd4bc0e093472c5d0e41b8ea493a545cc926ce171aa6"
+    },
+    "libminizip1:amd64": {
+      "version": "1.1-8build1",
+      "notice": "libminizip1_amd64.txt",
+      "sha256": "520c666ae15ce90b95c22c37e9a9fa030c775c8e9d5a8bce6a929bbe2a28dcca"
+    },
+    "libmysqlclient21:amd64": {
+      "version": "8.0.46-0ubuntu0.22.04.4",
+      "notice": "libmysqlclient21_amd64.txt",
+      "sha256": "d6b8a9a033b07c56afb1b448098760891d0cc872eaf0013c830f439864203094"
+    },
+    "libnetcdf19:amd64": {
+      "version": "1:4.8.1-1",
+      "notice": "libnetcdf19_amd64.txt",
+      "sha256": "69194aec1aef93ed8fc0c707211c0d25c2dd983b0840aaa675a0fa208b23d821"
+    },
+    "libnettle8:amd64": {
+      "version": "3.7.3-1build2",
+      "notice": "libnettle8_amd64.txt",
+      "sha256": "d8b51ce04d337e49df2f6258a5c8558f3080ff2cf629deb9f07c0361d1757e7b"
+    },
+    "libnghttp2-14:amd64": {
+      "version": "1.43.0-1ubuntu0.4",
+      "notice": "libnghttp2-14_amd64.txt",
+      "sha256": "2310a85e31051d9d60e22be1b35e20ee447ad1de8b80a88bb46711154374318e"
+    },
+    "libnspr4:amd64": {
+      "version": "2:4.35-0ubuntu0.22.04.1",
+      "notice": "libnspr4_amd64.txt",
+      "sha256": "3c4fcc131809b2b6993513bfe4cf6f1ede391ec84f1d5ceca78fb75537b22452"
+    },
+    "libnss3:amd64": {
+      "version": "2:3.98-0ubuntu0.22.04.4",
+      "notice": "libnss3_amd64.txt",
+      "sha256": "d91076658d63a9486e031cedd9dec97d99cfb13ddc3296ac7b22552dbb1ea503"
+    },
+    "libnuma1:amd64": {
+      "version": "2.0.14-3ubuntu2",
+      "notice": "libnuma1_amd64.txt",
+      "sha256": "179c34f5e56cd0b6b73dd7970a97357ee784e2236e8293826656c7ebb3bface7"
+    },
+    "libodbc2:amd64": {
+      "version": "2.3.9-5ubuntu0.1",
+      "notice": "libodbc2_amd64.txt",
+      "sha256": "1836103ed6b99b2099c099ac81aed8887833c54af95ba4b3301522ee430a166b"
+    },
+    "libodbcinst2:amd64": {
+      "version": "2.3.9-5ubuntu0.1",
+      "notice": "libodbcinst2_amd64.txt",
+      "sha256": "1836103ed6b99b2099c099ac81aed8887833c54af95ba4b3301522ee430a166b"
+    },
+    "libogdi4.1": {
+      "version": "4.1.0+ds-5",
+      "notice": "libogdi4.1.txt",
+      "sha256": "7caa11024d8e1362316a33c36a79f9a8b375a69981d6a1821463c463ff9d2669"
+    },
+    "libopencv-core4.5d:amd64": {
+      "version": "4.5.4+dfsg-9ubuntu4",
+      "notice": "libopencv-core4.5d_amd64.txt",
+      "sha256": "f2ce22a9c770e1f144d47cbbfdc1599b9073fa796407fcd958dfefc9ca1ee521"
+    },
+    "libopencv-imgcodecs4.5d:amd64": {
+      "version": "4.5.4+dfsg-9ubuntu4",
+      "notice": "libopencv-imgcodecs4.5d_amd64.txt",
+      "sha256": "f2ce22a9c770e1f144d47cbbfdc1599b9073fa796407fcd958dfefc9ca1ee521"
+    },
+    "libopencv-imgproc4.5d:amd64": {
+      "version": "4.5.4+dfsg-9ubuntu4",
+      "notice": "libopencv-imgproc4.5d_amd64.txt",
+      "sha256": "f2ce22a9c770e1f144d47cbbfdc1599b9073fa796407fcd958dfefc9ca1ee521"
+    },
+    "libopenjp2-7:amd64": {
+      "version": "2.4.0-6ubuntu0.5",
+      "notice": "libopenjp2-7_amd64.txt",
+      "sha256": "e10d65b1ada3f938c15992d9912fcda0b9cfd15e5715d8d2ff6f20a150b781de"
+    },
+    "libp11-kit0:amd64": {
+      "version": "0.24.0-6ubuntu0.1",
+      "notice": "libp11-kit0_amd64.txt",
+      "sha256": "b19d4f3a62c6257c770607ba0e872ac21ba22806710ede0384c622882f84d61b"
+    },
+    "libpcre2-8-0:amd64": {
+      "version": "10.39-3ubuntu0.1",
+      "notice": "libpcre2-8-0_amd64.txt",
+      "sha256": "f65dae37239e4d61a1bdeaf2ded76b8569d012a054aa042233b78615e7a83210"
+    },
+    "libpng16-16:amd64": {
+      "version": "1.6.37-3ubuntu0.7",
+      "notice": "libpng16-16_amd64.txt",
+      "sha256": "b2d88c45221e2016a5a0bb98406b45faf911f1aff87242eec12af05abae1de0a"
+    },
+    "libpoppler118:amd64": {
+      "version": "22.02.0-2ubuntu0.14",
+      "notice": "libpoppler118_amd64.txt",
+      "sha256": "dad79f8e4b904808e65be744e3cd23303f050573c634a697ccb8696ef291eb63"
+    },
+    "libpq5:amd64": {
+      "version": "14.24-0ubuntu0.22.04.1",
+      "notice": "libpq5_amd64.txt",
+      "sha256": "d374d92a5b60282cfbab5a0954342aecc4a101ad33ee7891a634348412c407b2"
+    },
+    "libproj22:amd64": {
+      "version": "8.2.1-1",
+      "notice": "libproj22_amd64.txt",
+      "sha256": "965b956ebc78117e4967c650a406ddb81c8099552f688493c0fe4589c4c53a06"
+    },
+    "libpsl5:amd64": {
+      "version": "0.21.0-1.2build2",
+      "notice": "libpsl5_amd64.txt",
+      "sha256": "a530da63c89b707cb51a9c84667aecd0f2a138b0503734cbc8e73ea7cc6fbae0"
+    },
+    "libqhull-r8.0:amd64": {
+      "version": "2020.2-4",
+      "notice": "libqhull-r8.0_amd64.txt",
+      "sha256": "1a6b74a4dea43e7d8266d0fc1efd01e00dd66eb7cdc6a6ffba2f78f100d18861"
+    },
+    "libquadmath0:amd64": {
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "notice": "libquadmath0_amd64.txt",
+      "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+    },
+    "librtmp1:amd64": {
+      "version": "2.4+20151223.gitfa8646d.1-2build4",
+      "notice": "librtmp1_amd64.txt",
+      "sha256": "4302abcc1ea1b6cbe8d19c79b892acf78878030220210707c19006828866207c"
+    },
+    "librttopo1:amd64": {
+      "version": "1.1.0-2",
+      "notice": "librttopo1_amd64.txt",
+      "sha256": "9fa38c115ff104f8f4e526771f74f3008ebe8389b956906cc7b38aca8dfad48f"
+    },
+    "libsasl2-2:amd64": {
+      "version": "2.1.27+dfsg2-3ubuntu1.2",
+      "notice": "libsasl2-2_amd64.txt",
+      "sha256": "071d60cc8a42129b80fd2b8b6a8873971a0a06738eabdf5c87bc1df2424e7fd1"
+    },
+    "libsnappy1v5:amd64": {
+      "version": "1.1.8-1build3",
+      "notice": "libsnappy1v5_amd64.txt",
+      "sha256": "bfdf96efcac3b6be61a5fdd3ef81023e4f262ce3e1d7eb31a826098460b2ca7f"
+    },
+    "libspatialite7:amd64": {
+      "version": "5.0.1-2build2",
+      "notice": "libspatialite7_amd64.txt",
+      "sha256": "2e675cef8161c12bb23a92e9941558f8bfe079844f61d349878e4bfdd35441c4"
+    },
+    "libsqlite3-0:amd64": {
+      "version": "3.37.2-2ubuntu0.8",
+      "notice": "libsqlite3-0_amd64.txt",
+      "sha256": "78e9df8f8153c91c762ec970b82d224ac4d30f05aa7773e7e17e268141e53873"
+    },
+    "libssh-4:amd64": {
+      "version": "0.9.6-2ubuntu0.22.04.8",
+      "notice": "libssh-4_amd64.txt",
+      "sha256": "7e8414e138a9170e3a463e80020a8a7e168a6e736bac37a4f38fdb1ce4180d65"
+    },
+    "libstdc++6:amd64": {
+      "version": "12.3.0-1ubuntu1~22.04.3",
+      "notice": "libstdc++6_amd64.txt",
+      "sha256": "da8191658b3452ce9caf31638ba61dab31a38c619fa39df119812e050f592fd3"
+    },
+    "libsuperlu5:amd64": {
+      "version": "5.3.0+dfsg1-2",
+      "notice": "libsuperlu5_amd64.txt",
+      "sha256": "d417a3b4fa03a1a90e1f748300f51695b27e2d91a7a0d1781795bd1956d34543"
+    },
+    "libsz2:amd64": {
+      "version": "1.0.6-1",
+      "notice": "libsz2_amd64.txt",
+      "sha256": "d4db5de948df5daca9cffd24de298cda96616b0b9c66a967d0b20be664f0ebda"
+    },
+    "libtasn1-6:amd64": {
+      "version": "4.18.0-4ubuntu0.2",
+      "notice": "libtasn1-6_amd64.txt",
+      "sha256": "88a94e40a34bb28145805747cad4018e7eb976b5fd0bf2329dedf90088ebc6e4"
+    },
+    "libtbb2:amd64": {
+      "version": "2020.3-1ubuntu3",
+      "notice": "libtbb2_amd64.txt",
+      "sha256": "9801763b35a69eb06e362f6723f3f9a38628726f7709c27d6c398c966e6078fd"
+    },
+    "libtiff5:amd64": {
+      "version": "4.3.0-6ubuntu0.13",
+      "notice": "libtiff5_amd64.txt",
+      "sha256": "76d76328df19f51ad6b48e925cc2fd8aeaea7d2f1ce905983753fc855466de8b"
+    },
+    "libtirpc3:amd64": {
+      "version": "1.3.2-2ubuntu0.1",
+      "notice": "libtirpc3_amd64.txt",
+      "sha256": "cffa5bbd80f3e38acf6ef3a0af73679b36c17f2eb3054c72d24b06b35eca1e03"
+    },
+    "libunistring2:amd64": {
+      "version": "1.0-1",
+      "notice": "libunistring2_amd64.txt",
+      "sha256": "0035f89e5317f3cec389383e8727788521b0fde3e75cea881fa0e92e1d48cb57"
+    },
+    "liburiparser1:amd64": {
+      "version": "0.9.6+dfsg-1",
+      "notice": "liburiparser1_amd64.txt",
+      "sha256": "52ef4a82ef69763e624991af7e4a8782dd9fc723859fa642b36887476d2bb6a5"
+    },
+    "libuuid1:amd64": {
+      "version": "2.37.2-4ubuntu3.6",
+      "notice": "libuuid1_amd64.txt",
+      "sha256": "2c447817698777e3b2365a5afe2a58ececb85367dfdf0ea2c0df49add90e93eb"
+    },
+    "libwebp7:amd64": {
+      "version": "1.2.2-2ubuntu0.22.04.2",
+      "notice": "libwebp7_amd64.txt",
+      "sha256": "01eb328708a9454061dd13931b19135e1c2c6251a7e6a6d0efc4b9bc436109c7"
+    },
+    "libx265-199:amd64": {
+      "version": "3.5-2",
+      "notice": "libx265-199_amd64.txt",
+      "sha256": "993d16fbf3d32b7eeeae4081167e4a4b1d05bdb0e20b79b576113c0697c5f729"
+    },
+    "libxcb1:amd64": {
+      "version": "1.14-3ubuntu3",
+      "notice": "libxcb1_amd64.txt",
+      "sha256": "4f7cb9db6bf6542f5417e3d674c780d3a5fd12291a54d63054fb576ee0cfae80"
+    },
+    "libxerces-c3.2:amd64": {
+      "version": "3.2.3+debian-3ubuntu0.1",
+      "notice": "libxerces-c3.2_amd64.txt",
+      "sha256": "2b9fd427c0846a407b2b9bc16546a8519f4cf8bda85458a46401706650a3fd84"
+    },
+    "libxml2:amd64": {
+      "version": "2.9.13+dfsg-1ubuntu0.14",
+      "notice": "libxml2_amd64.txt",
+      "sha256": "ee746b96cfa5be73c3ea3e4cfb1285e9b315d4c9267f99b2ee9c5d911d9fe3f4"
+    },
+    "zlib1g:amd64": {
+      "version": "1:1.2.11.dfsg-2ubuntu9.2",
+      "notice": "zlib1g_amd64.txt",
+      "sha256": "d77204eee882807240f6351c4f5ae2a4bcdb5b773ff77d10647b9b66b826b2fb"
+    },
+    "libzstd1:amd64": {
+      "version": "1.4.8+dfsg-3build1",
+      "notice": "libzstd1_amd64.txt",
+      "sha256": "8cf66791fbe72801cb1d701c832b7e395dad0000bb9699dc42df94b49d699e91"
+    }
+  },
+  "unidentified_libraries": []
+}
