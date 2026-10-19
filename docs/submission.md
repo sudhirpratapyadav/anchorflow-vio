@@ -68,21 +68,24 @@ For this IMU method the frame is `world_from_imu`. The tools reject cropped runs
 mixed policies/runtimes, changed pinned inputs, missing timestamps, nonfinite
 poses and nonunit quaternions. They never upload or certify localization quality.
 
-## Current scope and test-data preflight
+## Completed test results
 
-The published results cover ten complete training challenge recordings and ten
-controlled-start checks. The prepared training archive contains 265,694 poses;
-it excludes the separate controlled experimental training set. Known failures
-are retained. There are no claimed main-test results.
+All 63 main-test recordings have been downloaded and processed with the frozen
+monocular + IMU method. Individual estimates and all five category ZIPs plus the
+combined ZIP passed official-parser, full timestamp coverage and integrity checks.
+See [test_completion.md](test_completion.md) for hashes and reliability limitations.
+No main-test leaderboard score is claimed before the server evaluates the upload.
 
-An index-only check on 2026-10-17 found 63 main-test ASL archives, approximately
-881.3 GiB compressed, using rounded directory sizes. Counts: Short 18, Medium 10,
-Long 16, Lowlight 9, Platform 10. See [test_inventory.json](test_inventory.json).
-No test archive was downloaded during release preparation. Unpacked storage and
-temporary ZIP space are additional; process archives sequentially if needed.
+Upload this single combined archive through the method's results page:
 
-Before scheduling test runs, obtain the authorized data and both pinhole/Aria
-calibrations, run the factory-calibration preflight, check storage, and keep the
-same policy for every sequence. Unknown factory-calibration keys are a real
-blocker, not permission to substitute another device's coefficients. Account
-access and the website upload are separate from the local packaging commands.
+`/media/ubuntu/ext_drive/anchorflow-vio-test/packages/all_63_official/anchorflow_mono_all_63.zip`
+
+SHA-256: `a98232b2f6a7026b6d5d9c5357bb661b162ba0401f54a340d6a5c8e04c0c0754`.
+
+Select **Monocular** and **IMU: Yes**, and use the public GitHub source URL above.
+The archive contains all five complete challenges. Uploading test results makes
+the method public. Wait for server evaluation and inspect its status/results;
+local format checks do not establish accuracy. The frozen results include severe
+tracking discontinuities on Platform 5_4, 5_5 and 5_6, as documented in the
+completion report. The owner authorized public submission on 2026-10-19;
+authenticated website access is still required to perform it.
