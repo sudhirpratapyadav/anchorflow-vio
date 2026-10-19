@@ -20,19 +20,30 @@ limitations are documented in [build.md](build.md).
 - All 800 image timestamps are covered: 780 native poses, 20 initialization
   fills, zero later fills. All 139,977 observations are from camera 0.
 
-This is a 40-second installation/reproduction check, not a repeat of the ten
-full-record accuracy experiments. Historical per-record metrics remain labeled
-as such. Different compiler/CPU/dependency combinations can change behavior;
+The initial smoke covered 40 seconds. A subsequent complete Short19 run
+reproduced all 18,352 output poses and observation files byte for byte, including
+2,948,425 camera 0 observations. It used 373.30 CPU seconds, 211.13 wall seconds
+and 199,668 KiB peak RSS. Coverage includes 20 initialization fills and one
+terminal fill, matching the original. The preparer now accepts and reports the
+4.804362 ms terminal IMU gap without altering sensor rows; gaps exceeding one
+median image period remain errors. See [test_execution.md](test_execution.md).
+
+This is not a repeat of all ten full-record accuracy experiments. Historical
+per-record metrics remain labeled as such. Different compiler/CPU/dependency combinations can change behavior;
 byte-identical results are claimed only for the tested setup.
 The [native validation receipt](../native/validation.json) records runtime hashes,
 observation parity and measured resource use.
 
 ## Python and submission checks
 
-Nine unit tests pass in the fresh inference environment. They cover one-camera
+Twenty-two unit tests pass in the fresh inference environment. They cover one-camera
 calibration construction, unknown-calibration rejection, runtime path safety,
 missing/duplicate/reversed timestamps, malformed poses, deterministic archives,
 tampering, cropped runs, wrong dataset-split labels and mixed native configs.
+Additional checks cover sub-frame IMU endpoints, safe archive extraction and
+checksum ledgers, readiness receipts, independent original-image coverage,
+finite mono observations, numeric queue ordering, source mutation rejection and
+resuming incomplete segmented downloads whose logical file size is already full.
 
 The actual 800-frame smoke is rejected by the full-record manifest generator:
 `ValueError: Only full-record runs may be submitted`. This is the expected
@@ -57,6 +68,9 @@ embedded in this source repository.
 
 Only the mono source adaptation, configuration, tooling, benchmark summaries
 and dependency notices are published. No dataset, private research history,
-credentials, binary cache or stereo experiment tree is included. No main-test
-data was downloaded and no leaderboard upload was performed. The official test
-index was inspected only to prepare the documented data/storage plan.
+credentials, binary cache or stereo experiment tree is included. The initial
+v0.1.0 release preceded test downloads. The owner subsequently authorized all
+63 main-test ASL recordings and their calibrations on external storage; downloads
+and the frozen inference queue are now running. No leaderboard upload has been
+performed. Test execution status and artifacts remain separate from training
+accuracy evidence.

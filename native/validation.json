@@ -1,6 +1,6 @@
 {
   "date": "2026-10-17",
-  "scope": "Fresh native source rebuild and matched 800-image Short19 smoke only; historical full-ten-record benchmark results were not rerun with this binary.",
+  "scope": "Fresh native source rebuild, matched 800-image Short19 smoke, and full Short19 reproduction; historical full-ten-record benchmark results were not rerun with this binary.",
   "build": {
     "target": "basalt_vio",
     "targets_completed": 43,
@@ -49,6 +49,58 @@
   "limitations": [
     "Offline cache-based build only; user-operated clean dependency acquisition and clean OS build not measured.",
     "Compiler and CPU portability require validation; historical Release native CPU target retained.",
-    "Short smoke parity does not establish full-record scientific parity on all recordings."
-  ]
+    "Exact full Short19 parity does not establish scientific parity on all ten training recordings or test accuracy."
+  ],
+  "full_short19": {
+    "passed": true,
+    "sequence": "sequence_1_19",
+    "runtime_sha256": {
+      "basalt_vio": "7b2f0742cbae494f285358c270ba29ca30c76d5aa0c03342027617da4516f6df",
+      "libbasalt.so": "4ec903655a79d15e76ea74bcb42224c27cd09e4b38390485605901210ff4afbc",
+      "libmono_reader.so": "77ff4da0348343c85b50df951bb33384ad66c11593a06ace8774348451da598a"
+    },
+    "checks": {
+      "trajectory.txt": true,
+      "estimate.txt": true,
+      "all_observation_bytes_equal": true
+    },
+    "observation_files": 18352,
+    "audit": {
+      "poses": 18352,
+      "full_original_coverage": true,
+      "camera_ids": [
+        0
+      ],
+      "observations": 2948425,
+      "observation_digest": "cccb2fa64846e788f79299931d675f51b5f60ddaa8d3dcecfc45f5a32a3d1072",
+      "estimate_sha256": "39e5c0c40cf54aa4bd00f462b8365547237975a4039708df5c456d2847b0db6b",
+      "original_timestamps_sha256": "81d2ffc956db53dfb579d605430e35858cf404767546f52286c10c5955d21742",
+      "max_step_m": 0.10814549043475719,
+      "max_speed_m_s": 2.1629098086951437,
+      "steps_over_10m": 0,
+      "accuracy_evaluated": false,
+      "diagnostic_note": "Motion extremes are reported, never used for tuning or selecting configurations."
+    },
+    "sha256": {
+      "trajectory.txt": "22397b8994d99f67e0c1e73a0d36cebc236f663daacd1db03b373fbbe8fa7e15",
+      "estimate.txt": "39e5c0c40cf54aa4bd00f462b8365547237975a4039708df5c456d2847b0db6b"
+    },
+    "cost": {
+      "cpu_s": 373.3,
+      "wall_s": 211.13,
+      "peak_rss_kib": 199668
+    },
+    "coverage": {
+      "images": 18352,
+      "intentionally_skipped_images": 0,
+      "output_poses": 18352,
+      "complete_coverage": true,
+      "estimates": 18331,
+      "matched_within_tolerance": 18331,
+      "images_before_first_estimate": 20,
+      "gap_filled_after_init": 1
+    },
+    "note": "Complete Short19 reproduction after reporting sub-frame endpoint IMU gap; no sensor rows altered. First preparer attempt rejected4.804362ms terminal gap before native launch; narrow preflight fix then exact input parity."
+  },
+  "full_short19_proof_sha256": "82bf5274fffe9fcf4f9d1e97aa84a2d186d286507cfcbd6f1b6d80c933c4c5d3"
 }

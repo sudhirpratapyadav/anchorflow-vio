@@ -57,7 +57,7 @@ def enough_space(directory, required):
         raise OSError(f'Insufficient disk space: {free} bytes free, {required} plus {RESERVE} reserve needed')
 
 
-def fetch(url, target, status, save):
+def fetch_once(url, target, status, save):
     metadata = remote_info(url)
     meta_path = target.with_suffix(target.suffix + '.remote.json')
     if meta_path.exists():
@@ -68,20 +68,32 @@ def fetch(url, target, status, save):
     existing = target.stat().st_size if target.exists() else 0
     if existing > metadata['bytes']:
         raise ValueError('Local file larger than pinned remote object')
-    enough_space(target.parent, metadata['bytes'] - existing)
+    control = Path(str(target) + '.aria2')
+    parallel = control.exists() or (os.environ.get('ANCHORFLOW_PARALLEL_DOWNLOADS') == '1'
+                                  and url.endswith('.zip') and existing == 0)
+    enough_space(target.parent, metadata['bytes'] if control.exists() else metadata['bytes'] - existing)
     status.update(url=url, target=str(target), total_bytes=metadata['bytes'], downloaded_bytes=existing)
     save()
-    if existing < metadata['bytes']:
+    if existing < metadata['bytes'] or control.exists():
         command = ['curl','--fail','--location','--silent','--show-error','--continue-at','-',
-            '--retry','8','--retry-all-errors','--retry-delay','10','--connect-timeout','30',
+            '--retry','0','--connect-timeout','30',
             '--speed-limit','1024','--speed-time','120','--output',str(target),url]
+        if parallel:
+            command = ['aria2c', '--continue=true', '--allow-overwrite=false',
+                '--auto-file-renaming=false', '--file-allocation=none',
+                '--max-connection-per-server=4', '--split=4', '--min-split-size=32M',
+                '--max-tries=1', '--connect-timeout=30', '--timeout=120',
+                '--disk-cache=32M', '--summary-interval=10', '--console-log-level=notice',
+                '--dir='+str(target.parent), '--out='+target.name, url]
+        status['transfer_backend'] = 'aria2c' if parallel else 'curl'
         with target.with_suffix(target.suffix+'.download.log').open('a') as log:
             process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             status['transfer_pid'] = process.pid
             save()
             try:
                 while process.poll() is None:
-                    status['downloaded_bytes'] = target.stat().st_size if target.exists() else 0
+                    # Segmented files can have full logical size before all pieces arrive.
+                    status['downloaded_bytes'] = None if parallel else (target.stat().st_size if target.exists() else 0)
                     save()
                     time.sleep(5)
                 if process.returncode:
@@ -97,11 +109,29 @@ def fetch(url, target, status, save):
                 raise
             finally:
                 status.pop('transfer_pid',None)
+    if control.exists():
+        raise ValueError('Segmented download still has unfinished pieces')
     if target.stat().st_size != metadata['bytes']:
         raise ValueError('Downloaded byte count differs from remote length')
     status['downloaded_bytes'] = metadata['bytes']
     save()
     return metadata
+
+
+def fetch(url, target, status, save):
+    # A fresh curl process recalculates the resume offset after a partial failure.
+    # Curl's internal retry can rewind to the offset from its initial invocation.
+    for attempt in range(1, 10):
+        status['transfer_attempt'] = attempt
+        try:
+            return fetch_once(url, target, status, save)
+        except subprocess.CalledProcessError as error:
+            status['last_transfer_error'] = str(error)
+            status['downloaded_bytes'] = None if Path(str(target)+'.aria2').exists() else (target.stat().st_size if target.exists() else 0)
+            save()
+            if attempt == 9:
+                raise
+            time.sleep(10)
 
 
 def extract(archive_path, staging, status, save):

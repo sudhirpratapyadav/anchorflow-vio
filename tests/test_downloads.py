@@ -8,10 +8,58 @@ from unittest.mock import patch
 import zipfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from fetch_test_data import safe_members, extract, verify_layout
+from fetch_test_data import safe_members, extract, verify_layout, fetch
 
 
 class DownloadTests(unittest.TestCase):
+    def test_retry_preserves_partial_and_rechecks_remote(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/'archive.part'
+            metadata = dict(url='https://example.invalid/data', bytes=6, etag='same')
+            offsets = []
+            class Process:
+                pid = 123
+                def __init__(self, command, **kwargs):
+                    self.returncode = 56 if not offsets else 0
+                    offsets.append(target.stat().st_size if target.exists() else 0)
+                    self_command = command
+                    assert self_command[self_command.index('--retry')+1] == '0'
+                    with target.open('ab') as stream:
+                        stream.write(b'abc' if self.returncode else b'def')
+                def poll(self):
+                    return self.returncode
+            with patch('fetch_test_data.remote_info', return_value=metadata) as remote, \
+                 patch('fetch_test_data.enough_space'), \
+                 patch('fetch_test_data.subprocess.Popen', Process), \
+                 patch('fetch_test_data.time.sleep'):
+                self.assertEqual(fetch(metadata['url'], target, {}, lambda:None), metadata)
+            self.assertEqual(offsets, [0, 3])
+            self.assertEqual(remote.call_count, 2)
+            self.assertEqual(target.read_bytes(), b'abcdef')
+
+    def test_segmented_full_size_file_requires_completion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp)/'archive.zip.part'
+            target.write_bytes(b'abcdef')
+            control = Path(str(target)+'.aria2')
+            control.write_bytes(b'unfinished pieces')
+            metadata = dict(url='https://example.invalid/data.zip', bytes=6, etag='same')
+            commands = []
+            class Process:
+                pid = 123
+                returncode = 0
+                def __init__(self, command, **kwargs):
+                    commands.append(command)
+                    control.unlink()
+                def poll(self):
+                    return 0
+            with patch('fetch_test_data.remote_info', return_value=metadata), \
+                 patch('fetch_test_data.enough_space'), \
+                 patch('fetch_test_data.subprocess.Popen', Process):
+                fetch(metadata['url'], target, {}, lambda:None)
+            self.assertEqual(commands[0][0], 'aria2c')
+            self.assertIn('--max-connection-per-server=4', commands[0])
+
     def test_traversal_and_symlink_rejected(self):
         for name, mode in [('../escape',0),('/absolute',0),('link',stat.S_IFLNK|0o777)]:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
